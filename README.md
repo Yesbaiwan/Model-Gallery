@@ -6,14 +6,28 @@
 
 ## 🚀 快速开始
 
-### 🦕 deno 部署
+### 本地运行
 
-1. 登录 [deno](https://dash.deno.com) dashboard
+1. 安装 Deno（参考 [官方文档](https://docs.deno.com/runtime/getting_started/installation/)）
+2. 复制环境变量示例文件：
+   ```bash
+   cp .env.example .env
+   ```
+3. 编辑 `.env` 文件，填入你的 `API_KEY` 等配置
+4. 运行项目：
+   ```bash
+   deno run --allow-net --allow-env --env main.ts
+   ```
+5. 打开浏览器访问 http://localhost:8000
+
+### Deno Deploy 部署
+
+1. 登录 [Deno](https://dash.deno.com) Dashboard
 2. 创建一个 New Playground
 3. 粘贴 `main.ts` 代码
 4. 添加环境变量
 
-### ☁️ Cloudflare Worker 部署
+### Cloudflare Worker 部署
 
 1. 登录 [Cloudflare 控制台](https://dash.cloudflare.com)
 2. 进入 **Workers & Pages**
@@ -28,9 +42,9 @@
 | `API_URL`      | URL      | AI 模型 API 基础地址，会自动拼接 `API_ENDPOINT` | https://api.openai.com                            | 必选         |
 | `API_ENDPOINT` | String   | API 端点路径，默认 `v1/models`                  | v1/models                                         | 可选         |
 | `API_KEY`      | String   | API 访问密钥                                    | sk-xxxxxxxxxxxxxxxxxxxxxxxx                       | 必选         |
-| `SITE_NAME`    | String   | 网站标题，显示在页面顶部                        | Model Gallery                                     | 可选         |
-| `SITE_LINK`    | URL      | 网站链接，图标点击后跳转的地址                  | https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery | 可选         |
-| `SITE_IMAGE`   | URL      | 同时用于页面顶部和 favicon 的图标               | https://docs.newapi.pro/assets/logo.png           | 可选         |
+| `SITE_NAME`    | String   | 显示在页面顶部的网站标题                        | Model Gallery                                     | 可选         |
+| `SITE_LINK`    | URL      | 图标点击后跳转的链接                            | https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery | 可选         |
+| `SITE_IMAGE`   | URL      | 页面顶部和 favicon 的图标                       | https://docs.newapi.pro/assets/logo.png           | 可选         |
 
 ## 🔍 匹配流程
 
