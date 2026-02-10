@@ -76,7 +76,7 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
     keywords: ["deepseek"],
   },
   Kimi: {
-    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/kimi-color.webp",
+    icon: "https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com/Model_LOGO/moonshotai_new.png",
     keywords: ["kimi", "moonshot"],
   },
   腾讯混元: {
@@ -93,7 +93,7 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
   },
   硅基流动: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/siliconcloud-color.webp",
-    keywords: ["silicon", "siliconflow", "siliconcloud", "硅基"],
+    keywords: ["silicon", "硅基"],
   },
   LongCat: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/longcat-color.webp",
@@ -122,6 +122,10 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
   文心一言: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/wenxin-color.webp",
     keywords: ["yiyan", "一言", "wenxin", "文心", "baidu", "百度", "ernie"],
+  },
+  阶跃星辰: {
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/stepfun-color.webp",
+    keywords: ["step", "阶跃星辰"],
   },
   default: {
     // 默认组
