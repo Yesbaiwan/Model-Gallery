@@ -1,78 +1,6 @@
-// ==================== 配置部分 ====================
-interface SiteConfig {
-  name: string;
-  apiUrl: string;
-  apiKey: string;
-  apiEndpoint: string;
-  externalUrl: string;
-  iconUrl: string;
-}
+// ==================== 图标分组配置 ====================
+// key 为分组名称，icon 为图标 URL，keywords 为匹配关键词（按顺序匹配）
 
-interface AppConfig {
-  sites: SiteConfig[];
-  defaultSite: string;
-}
-
-function buildApiUrl(baseUrl: string, endpoint: string): string {
-  const trimmedBase = baseUrl.replace(/\/$/, "");
-  const trimmedEndpoint = endpoint.replace(/^\//, "");
-  return `${trimmedBase}/${trimmedEndpoint}`;
-}
-
-// 加载配置文件（优先从环境变量读取，失败时回退到文件）
-let appConfig: AppConfig;
-const configFromEnv = Deno.env.get("CONFIG_JSON");
-
-if (configFromEnv) {
-  try {
-    appConfig = JSON.parse(configFromEnv);
-  } catch {
-    appConfig = { sites: [], defaultSite: "" };
-  }
-} else {
-  try {
-    const configText = await Deno.readTextFile("./config.json");
-    appConfig = JSON.parse(configText);
-  } catch {
-    appConfig = { sites: [], defaultSite: "" };
-  }
-}
-
-// 为站点填充默认值
-appConfig.sites = appConfig.sites.map((site) => ({
-  ...site,
-  apiEndpoint: site.apiEndpoint || "/v1/models",
-  externalUrl: site.externalUrl || "https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery",
-  iconUrl: site.iconUrl || "https://docs.newapi.pro/assets/logo.png",
-}));
-
-// 处理 defaultSite：如果没有指定或指定错误，使用第一个站点
-if (!appConfig.defaultSite || !appConfig.sites.find((s) => s.name === appConfig.defaultSite)) {
-  appConfig.defaultSite = appConfig.sites[0]?.name ?? "";
-}
-
-// 当前选中的站点（使用内存存储）
-let currentSiteName: string = appConfig.defaultSite;
-
-function getCurrentSite(): SiteConfig | null {
-  return appConfig.sites.find((s) => s.name === currentSiteName) || appConfig.sites[0] || null;
-}
-
-function getSiteConfig(siteName: string): SiteConfig | null {
-  return appConfig.sites.find((s) => s.name === siteName) || null;
-}
-
-function setCurrentSite(siteName: string): boolean {
-  const site = getSiteConfig(siteName);
-  if (site) {
-    currentSiteName = siteName;
-    return true;
-  }
-  return false;
-}
-
-// 图标和分组配置
-// key 将作为组名，value 包含图标和用于匹配的关键词
 type GroupConfig = {
   icon: string;
   keywords: string[];
@@ -98,7 +26,7 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
   },
   MiniMax: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/minimax-color.webp",
-    keywords: ["minimax"],
+    keywords: ["minimax", "hailuo"],
   },
   Grok: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/grok.webp",
@@ -108,9 +36,9 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/nvidia-color.webp",
     keywords: ["nvidia"],
   },
-  Llama: {
-    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/ollama.webp",
-    keywords: ["ollama", "llama", "meta"],
+  Meta: {
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/meta-color.webp",
+    keywords: ["llama", "meta"],
   },
   Groq: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/groq.webp",
@@ -118,11 +46,11 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
   },
   Qwen: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/qwen-color.webp",
-    keywords: ["qwen", "tongyi", "wan"],
+    keywords: ["qwen", "qvq", "qwq", "wan", "tongyi", "通义"],
   },
   智谱: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/zhipu-color.webp",
-    keywords: ["zhipu", "thudm", "glm", "zai"],
+    keywords: ["zhipu", "thudm", "glm", "zai", "智谱"],
   },
   DeepSeek: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/deepseek-color.webp",
@@ -144,10 +72,6 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/yi-color.webp",
     keywords: ["yi"],
   },
-  硅基流动: {
-    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/siliconcloud-color.webp",
-    keywords: ["silicon", "硅基"],
-  },
   LongCat: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/longcat-color.webp",
     keywords: ["longcat"],
@@ -164,6 +88,10 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/doubao-color.webp",
     keywords: ["doubao", "豆包", "seed"],
   },
+  即梦: {
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/jimeng-color.webp",
+    keywords: ["jimeng", "即梦"],
+  },
   BAAI: {
     icon: "https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com/Model_LOGO/BAAI.svg",
     keywords: ["baai", "bge"],
@@ -176,24 +104,100 @@ const GROUP_CONFIG: Record<string, GroupConfig | DefaultGroupConfig> = {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/wenxin-color.webp",
     keywords: ["yiyan", "一言", "wenxin", "文心", "baidu", "百度", "ernie"],
   },
+  快手: {
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/kwaipilot-color.webp",
+    keywords: ["kat", "kolors", "kling", "快手", "可图", "可灵"],
+  },
   阶跃星辰: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/stepfun-color.webp",
     keywords: ["step", "阶跃星辰"],
   },
+  硅基流动: {
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/siliconcloud-color.webp",
+    keywords: ["silicon", "硅基"],
+  },
   default: {
-    // 默认组
     name: "其他",
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/openai.webp",
   },
 };
 
+// ==================== 站点配置 ====================
+
+interface SiteConfig {
+  name: string;
+  apiUrl: string;
+  apiKey: string;
+  apiEndpoint: string;
+  externalUrl: string;
+  iconUrl: string;
+}
+
+interface AppConfig {
+  sites: SiteConfig[];
+  defaultSite: string;
+}
+
+function buildApiUrl(baseUrl: string, endpoint: string): string {
+  const trimmedBase = baseUrl.replace(/\/$/, "");
+  const trimmedEndpoint = endpoint.replace(/^\//, "");
+  return `${trimmedBase}/${trimmedEndpoint}`;
+}
+
+// 加载配置：优先从环境变量 CONFIG_JSON 读取，否则从 config.json 文件读取
+let appConfig: AppConfig;
+const configFromEnv = Deno.env.get("CONFIG_JSON");
+
+if (configFromEnv) {
+  try {
+    appConfig = JSON.parse(configFromEnv);
+  } catch {
+    appConfig = { sites: [], defaultSite: "" };
+  }
+} else {
+  try {
+    const configText = await Deno.readTextFile("./config.json");
+    appConfig = JSON.parse(configText);
+  } catch {
+    appConfig = { sites: [], defaultSite: "" };
+  }
+}
+
+// 填充站点默认值
+appConfig.sites = appConfig.sites.map((site) => ({
+  ...site,
+  apiEndpoint: site.apiEndpoint || "/v1/models",
+  externalUrl: site.externalUrl || "https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery",
+  iconUrl: site.iconUrl || "https://docs.newapi.pro/assets/logo.png",
+}));
+
+// 处理默认站点：未指定或无效时使用第一个站点
+if (!appConfig.defaultSite || !appConfig.sites.find((s) => s.name === appConfig.defaultSite)) {
+  appConfig.defaultSite = appConfig.sites[0]?.name ?? "";
+}
+
+// 当前选中的站点（内存存储，重启后重置为默认站点）
+let currentSiteName: string = appConfig.defaultSite;
+
+function getCurrentSite(): SiteConfig | null {
+  return appConfig.sites.find((s) => s.name === currentSiteName) || appConfig.sites[0] || null;
+}
+
+function getSiteConfig(siteName: string): SiteConfig | null {
+  return appConfig.sites.find((s) => s.name === siteName) || null;
+}
+
+function setCurrentSite(siteName: string): boolean {
+  const site = getSiteConfig(siteName);
+  if (site) {
+    currentSiteName = siteName;
+    return true;
+  }
+  return false;
+}
+
 // ==================== 工具函数 ====================
 
-/**
- * 根据关键词对模型进行分组
- * @param models 模型名称数组
- * @returns 分组后的对象，键为组名，值为模型数组
- */
 function groupModelsByKeywords(models: string[]): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
 
@@ -201,22 +205,17 @@ function groupModelsByKeywords(models: string[]): Record<string, string[]> {
     const modelLower = model.toLowerCase();
     let assignedGroupName: string | null = null;
 
-    // 按照定义的顺序遍历组，进行匹配
     for (const groupName in GROUP_CONFIG) {
       const config = GROUP_CONFIG[groupName];
-      // 确保 'default' 组不会被关键词匹配
       if (groupName === "default") continue;
-
-      // 类型保护：检查是否有 keywords 属性
       if (!("keywords" in config)) continue;
 
       if (config.keywords.some((keyword: string) => modelLower.includes(keyword.toLowerCase()))) {
         assignedGroupName = groupName;
-        break; // 匹配成功后，立即停止遍历
+        break;
       }
     }
 
-    // 如果没有匹配到任何组，则分配给默认组 'default'
     const finalGroupName = assignedGroupName || "default";
 
     if (!groups[finalGroupName]) {
@@ -228,17 +227,13 @@ function groupModelsByKeywords(models: string[]): Record<string, string[]> {
   return groups;
 }
 
-/**
- * 根据组名获取图标
- * @param groupName 组名
- * @returns 图标URL
- */
 function getGroupIcon(groupName: string): string {
   const config = GROUP_CONFIG[groupName];
   return config?.icon || GROUP_CONFIG.default.icon;
 }
 
 // ==================== API 调用 ====================
+
 async function fetchModels(site?: SiteConfig): Promise<{
   models: string[] | null;
   error: string | null;
@@ -275,6 +270,7 @@ async function fetchModels(site?: SiteConfig): Promise<{
 }
 
 // ==================== HTML 模板生成 ====================
+
 function generateSiteSelector(): string {
   const otherSites = appConfig.sites.filter((s) => s.name !== currentSiteName);
 
@@ -404,7 +400,7 @@ function generateHtml(models: string[] | null, error: string | null): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Model Gallery</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="https://gh-proxy.com/https://raw.githubusercontent.com/ZhuBaiwan-oOZZXX/Model-Gallery/main/favicon.svg" type="image/svg+xml">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -600,11 +596,11 @@ function generateHtml(models: string[] | null, error: string | null): string {
 `;
 }
 
-// ==================== 服务器启动 ====================
+// ==================== HTTP 服务 ====================
+
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
 
-  // 处理站点切换请求
   if (url.pathname === "/switch-site" && req.method === "POST") {
     try {
       const body = await req.json();
@@ -624,18 +620,6 @@ Deno.serve(async (req: Request) => {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
-    }
-  }
-
-  // 处理图标请求
-  if (url.pathname === "/favicon.svg") {
-    try {
-      const svgContent = await Deno.readTextFile("./favicon.svg");
-      return new Response(svgContent, {
-        headers: { "Content-Type": "image/svg+xml" },
-      });
-    } catch {
-      return new Response("图标未找到", { status: 404 });
     }
   }
 
