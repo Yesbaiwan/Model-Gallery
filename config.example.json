@@ -1,0 +1,29 @@
+{
+  "sites": [
+    {
+      "name": "OpenAI",
+      "apiUrl": "https://api.openai.com",
+      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiEndpoint": "/v1/models",
+      "externalUrl": "https://openai.com",
+      "iconUrl": "https://docs.newapi.pro/assets/logo.png"
+    },
+    {
+      "name": "自定义站点1",
+      "apiUrl": "https://api.example1.com",
+      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiEndpoint": "/v1/models",
+      "externalUrl": "https://api.example1.com",
+      "iconUrl": "https://docs.newapi.pro/assets/logo.png"
+    },
+    {
+      "name": "自定义站点2",
+      "apiUrl": "https://api.example2.com",
+      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiEndpoint": "/v1/models",
+      "externalUrl": "https://api.example2.com",
+      "iconUrl": "https://docs.newapi.pro/assets/logo.png"
+    }
+  ],
+  "defaultSite": "自定义站点1"
+}

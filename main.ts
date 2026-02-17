@@ -1,4 +1,17 @@
 // ==================== 配置部分 ====================
+interface SiteConfig {
+  name: string;
+  apiUrl: string;
+  apiKey: string;
+  apiEndpoint: string;
+  externalUrl: string;
+  iconUrl: string;
+}
+
+interface AppConfig {
+  sites: SiteConfig[];
+  defaultSite: string;
+}
 
 function buildApiUrl(baseUrl: string, endpoint: string): string {
   const trimmedBase = baseUrl.replace(/\/$/, "");
@@ -6,17 +19,57 @@ function buildApiUrl(baseUrl: string, endpoint: string): string {
   return `${trimmedBase}/${trimmedEndpoint}`;
 }
 
-const BASE_URL = Deno.env.get("API_URL") || "https://api.openai.com";
-const API_ENDPOINT = Deno.env.get("API_ENDPOINT") || "v1/models";
+// 加载配置文件（优先从环境变量读取，失败时回退到文件）
+let appConfig: AppConfig;
+const configFromEnv = Deno.env.get("CONFIG_JSON");
 
-const CONFIG = {
-  API_URL: buildApiUrl(BASE_URL, API_ENDPOINT),
-  API_ENDPOINT: API_ENDPOINT,
-  API_KEY: Deno.env.get("API_KEY") || "",
-  SITE_NAME: Deno.env.get("SITE_NAME") || "Model Gallery",
-  SITE_LINK: Deno.env.get("SITE_LINK") || "https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery",
-  SITE_IMAGE: Deno.env.get("SITE_IMAGE") || "https://docs.newapi.pro/assets/logo.png",
-};
+if (configFromEnv) {
+  try {
+    appConfig = JSON.parse(configFromEnv);
+  } catch {
+    appConfig = { sites: [], defaultSite: "" };
+  }
+} else {
+  try {
+    const configText = await Deno.readTextFile("./config.json");
+    appConfig = JSON.parse(configText);
+  } catch {
+    appConfig = { sites: [], defaultSite: "" };
+  }
+}
+
+// 为站点填充默认值
+appConfig.sites = appConfig.sites.map((site) => ({
+  ...site,
+  apiEndpoint: site.apiEndpoint || "/v1/models",
+  externalUrl: site.externalUrl || "https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery",
+  iconUrl: site.iconUrl || "https://docs.newapi.pro/assets/logo.png",
+}));
+
+// 处理 defaultSite：如果没有指定或指定错误，使用第一个站点
+if (!appConfig.defaultSite || !appConfig.sites.find((s) => s.name === appConfig.defaultSite)) {
+  appConfig.defaultSite = appConfig.sites[0]?.name ?? "";
+}
+
+// 当前选中的站点（使用内存存储）
+let currentSiteName: string = appConfig.defaultSite;
+
+function getCurrentSite(): SiteConfig | null {
+  return appConfig.sites.find((s) => s.name === currentSiteName) || appConfig.sites[0] || null;
+}
+
+function getSiteConfig(siteName: string): SiteConfig | null {
+  return appConfig.sites.find((s) => s.name === siteName) || null;
+}
+
+function setCurrentSite(siteName: string): boolean {
+  const site = getSiteConfig(siteName);
+  if (site) {
+    currentSiteName = siteName;
+    return true;
+  }
+  return false;
+}
 
 // 图标和分组配置
 // key 将作为组名，value 包含图标和用于匹配的关键词
@@ -186,14 +239,20 @@ function getGroupIcon(groupName: string): string {
 }
 
 // ==================== API 调用 ====================
-async function fetchModels(): Promise<{
+async function fetchModels(site?: SiteConfig): Promise<{
   models: string[] | null;
   error: string | null;
 }> {
+  const targetSite = site || getCurrentSite();
+  if (!targetSite) {
+    return { models: null, error: "没有可用的站点配置" };
+  }
+
   try {
-    const response = await fetch(CONFIG.API_URL, {
+    const apiUrl = buildApiUrl(targetSite.apiUrl, targetSite.apiEndpoint);
+    const response = await fetch(apiUrl, {
       headers: {
-        Authorization: `Bearer ${CONFIG.API_KEY}`,
+        Authorization: `Bearer ${targetSite.apiKey}`,
         "Content-Type": "application/json",
       },
     });
@@ -216,18 +275,55 @@ async function fetchModels(): Promise<{
 }
 
 // ==================== HTML 模板生成 ====================
+function generateSiteSelector(): string {
+  const otherSites = appConfig.sites.filter((s) => s.name !== currentSiteName);
+
+  if (appConfig.sites.length <= 1) {
+    return "";
+  }
+
+  return `
+        <div class="fixed top-4 left-4 z-50">
+            <button id="siteSelectorBtn" 
+                    onclick="toggleSiteSelector()"
+                    class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/90 hover:bg-white border border-black/[0.06] hover:border-black/[0.12] shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)] transition-all duration-200">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-[#1d1d1f]">
+                    <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div id="siteSelectorDropdown" class="absolute top-full left-0 mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl border border-black/[0.06] shadow-[0_4px_20px_rgba(0,0,0,0.12)] opacity-0 invisible transition-all duration-200">
+                ${otherSites
+                  .map(
+                    (site) => `
+                    <button onclick="switchSite('${site.name}')" 
+                            class="w-full text-left px-4 py-3 text-sm text-[#1d1d1f] hover:bg-[#f5f5f7] first:rounded-t-xl last:rounded-b-xl transition-colors">
+                        ${site.name}
+                    </button>
+                `,
+                  )
+                  .join("")}
+            </div>
+        </div>
+    `;
+}
+
 function generateHeader(groupCount: number, modelCount: number): string {
+  const currentSite = getCurrentSite();
+  if (!currentSite) {
+    return "";
+  }
+
   return `
         <header class="flex items-center justify-between mb-10 rounded-[20px] px-6 py-4 bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
             <div class="flex items-center space-x-5">
-                <a href="${CONFIG.SITE_LINK}" target="_blank" class="group">
+                <a href="${currentSite.externalUrl}" target="_blank" class="group">
                     <div class="logo-container w-16 h-16 rounded-[18px] bg-white p-1 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden relative">
-                        <img src="${CONFIG.SITE_IMAGE}" 
+                        <img src="${currentSite.iconUrl}" 
                              alt="AI助手" 
                              class="w-full h-full rounded-[14px] object-cover">
                     </div>
                 </a>
-                <h1 class="text-2xl font-semibold tracking-tight text-[#1d1d1f]">${CONFIG.SITE_NAME}</h1>
+                <h1 class="text-2xl font-semibold tracking-tight text-[#1d1d1f]">${currentSite.name}</h1>
             </div>
             <div class="flex items-center space-x-8">
                 <div class="text-right">
@@ -307,8 +403,8 @@ function generateHtml(models: string[] | null, error: string | null): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${CONFIG.SITE_NAME}</title>
-    <link rel="icon" href="${CONFIG.SITE_IMAGE}" type="image/x-icon">
+    <title>Model Gallery</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -382,6 +478,7 @@ function generateHtml(models: string[] | null, error: string | null): string {
     </style>
 </head>
 <body>
+    ${generateSiteSelector()}
     <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-[1200px] mx-auto">
             ${generateHeader(groupNames.length, models?.length || 0)}
@@ -463,8 +560,39 @@ function generateHtml(models: string[] | null, error: string | null): string {
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // All groups expanded by default
+        let siteSelectorOpen = false;
+
+        function toggleSiteSelector() {
+            const dropdown = document.getElementById('siteSelectorDropdown');
+            siteSelectorOpen = !siteSelectorOpen;
+            
+            if (siteSelectorOpen) {
+                dropdown.classList.remove('opacity-0', 'invisible');
+                dropdown.classList.add('opacity-100', 'visible');
+            } else {
+                dropdown.classList.add('opacity-0', 'invisible');
+                dropdown.classList.remove('opacity-100', 'visible');
+            }
+        }
+
+        function switchSite(siteName) {
+            fetch('/switch-site', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ site: siteName })
+            }).then(() => {
+                window.location.reload();
+            }).catch(err => console.error('切换站点失败:', err));
+        }
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', (e) => {
+            const selector = document.getElementById('siteSelectorBtn');
+            const dropdown = document.getElementById('siteSelectorDropdown');
+            if (siteSelectorOpen && selector && dropdown && 
+                !selector.contains(e.target) && !dropdown.contains(e.target)) {
+                toggleSiteSelector();
+            }
         });
     </script>
 </body>
@@ -475,6 +603,42 @@ function generateHtml(models: string[] | null, error: string | null): string {
 // ==================== 服务器启动 ====================
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
+
+  // 处理站点切换请求
+  if (url.pathname === "/switch-site" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      const siteName = body.site;
+      if (setCurrentSite(siteName)) {
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } else {
+        return new Response(JSON.stringify({ success: false, error: "无效的站点" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    } catch {
+      return new Response(JSON.stringify({ success: false, error: "请求格式错误" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  // 处理图标请求
+  if (url.pathname === "/favicon.svg") {
+    try {
+      const svgContent = await Deno.readTextFile("./favicon.svg");
+      return new Response(svgContent, {
+        headers: { "Content-Type": "image/svg+xml" },
+      });
+    } catch {
+      return new Response("图标未找到", { status: 404 });
+    }
+  }
+
   if (url.pathname === "/") {
     const { models, error } = await fetchModels();
     const html = generateHtml(models, error);

@@ -9,42 +9,61 @@
 ### 本地运行
 
 1. 安装 Deno（参考 [官方文档](https://docs.deno.com/runtime/getting_started/installation/)）
-2. 复制环境变量示例文件：
+2. 复制配置文件示例并编辑：
    ```bash
-   cp .env.example .env
+   cp config.example.json config.json
+   # 编辑 config.json 文件，填入你的配置
    ```
-3. 编辑 `.env` 文件，填入你的 `API_KEY` 等配置
-4. 运行项目：
+3. 运行项目：
    ```bash
-   deno run --allow-net --allow-env --env main.ts
+   deno run --allow-all main.ts
    ```
-5. 打开浏览器访问 http://localhost:8000
+4. 打开浏览器访问 http://localhost:8000
 
 ### Deno Deploy 部署
 
 1. 登录 [Deno](https://dash.deno.com) Dashboard
 2. 创建一个 New Playground
 3. 粘贴 `main.ts` 代码
-4. 添加环境变量
+4. 添加环境变量 `CONFIG_JSON`，值为配置文件的 JSON 内容
 
-### Cloudflare Worker 部署
+## ⚙️ 配置说明
 
-1. 登录 [Cloudflare 控制台](https://dash.cloudflare.com)
-2. 进入 **Workers & Pages**
-3. 点击 **创建应用程序** -> **从 Hello World! 开始**
-4. 删除默认代码，粘贴 `worker.js` 代码
-5. 添加环境变量
+### 配置格式
 
-## ⚙️ 环境变量
+```json
+{
+  "sites": [
+    {
+      "name": "站点名称",
+      "apiUrl": "https://api.example.com",
+      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiEndpoint": "/v1/models",
+      "externalUrl": "https://example.com",
+      "iconUrl": "https://example.com/icon.png"
+    }
+  ],
+  "defaultSite": "站点名称"
+}
+```
 
-| **变量名**     | **类型** | **说明**                                        | **示例**                                          | **是否必选** |
-| -------------- | -------- | ----------------------------------------------- | ------------------------------------------------- | ------------ |
-| `API_URL`      | URL      | AI 模型 API 基础地址，会自动拼接 `API_ENDPOINT` | https://api.openai.com                            | 必选         |
-| `API_ENDPOINT` | String   | API 端点路径，默认 `v1/models`                  | v1/models                                         | 可选         |
-| `API_KEY`      | String   | API 访问密钥                                    | sk-xxxxxxxxxxxxxxxxxxxxxxxx                       | 必选         |
-| `SITE_NAME`    | String   | 显示在页面顶部的网站标题                        | Model Gallery                                     | 可选         |
-| `SITE_LINK`    | URL      | 图标点击后跳转的链接                            | https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery | 可选         |
-| `SITE_IMAGE`   | URL      | 页面顶部和 favicon 的图标                       | https://docs.newapi.pro/assets/logo.png           | 可选         |
+### 站点配置字段
+
+| **字段名**    | **类型** | **说明**                                                  | **默认值**                                          | **是否必选** |
+| ------------- | -------- | --------------------------------------------------------- | --------------------------------------------------- | ------------ |
+| `name`        | String   | 站点名称，显示在页面顶部                                  | -                                                   | 必选         |
+| `apiUrl`      | URL      | API 基础地址                                              | -                                                   | 必选         |
+| `apiKey`      | String   | API 访问密钥                                              | -                                                   | 必选         |
+| `apiEndpoint` | String   | API 端点路径                                              | `/v1/models`                                        | 可选         |
+| `externalUrl` | URL      | 图标点击后跳转的链接                                      | `https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery` | 可选         |
+| `iconUrl`     | URL      | 站点图标                                                  | `https://docs.newapi.pro/assets/logo.png`           | 可选         |
+| `defaultSite` | String   | 默认站点名称，未指定或无效时使用 `sites` 数组的第一个站点 | -                                                   | 可选         |
+
+### 环境变量
+
+| **变量名**    | **类型** | **说明**                                            | **是否必选** |
+| ------------- | -------- | --------------------------------------------------- | ------------ |
+| `CONFIG_JSON` | String   | 完整的配置 JSON 字符串，优先级高于 config.json 文件 | 可选         |
 
 ## 🔍 匹配流程
 
