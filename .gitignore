@@ -1,4 +1,4 @@
 ﻿node_modules
 .trae
 .env
-config.json
+config*.json
