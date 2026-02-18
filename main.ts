@@ -24,6 +24,12 @@ interface ModelResponse {
   data?: { id: string }[];
 }
 
+interface CacheEntry {
+  models: string[] | null;
+  error: string | null;
+  timestamp: number;
+}
+
 // ==================== 分组配置 ====================
 
 const GROUP_CONFIG: Record<string, GroupConfig> = {
@@ -147,7 +153,6 @@ const DEFAULT_SITE_CONFIG = {
 
 async function loadConfig(): Promise<AppConfig> {
   const configFromEnv = Deno.env.get("CONFIG_JSON");
-
   if (configFromEnv) {
     try {
       return JSON.parse(configFromEnv);
@@ -155,7 +160,6 @@ async function loadConfig(): Promise<AppConfig> {
       return { sites: [], defaultSite: "" };
     }
   }
-
   try {
     const configText = await Deno.readTextFile("./config.json");
     return JSON.parse(configText);
@@ -169,16 +173,14 @@ function normalizeConfig(config: AppConfig): AppConfig {
     ...DEFAULT_SITE_CONFIG,
     ...site,
   }));
-
   const defaultSite = config.defaultSite && sites.find((s) => s.name === config.defaultSite) ? config.defaultSite : sites[0]?.name ?? "";
-
   return { sites, defaultSite };
 }
 
-// ==================== 站点状态 ====================
-
 const appConfig = normalizeConfig(await loadConfig());
 let currentSiteName = appConfig.defaultSite;
+
+// ==================== 站点管理 ====================
 
 function getCurrentSite(): SiteConfig | null {
   return appConfig.sites.find((s) => s.name === currentSiteName) || appConfig.sites[0] || null;
@@ -192,15 +194,36 @@ function setCurrentSite(siteName: string): boolean {
   return false;
 }
 
+// ==================== 模型缓存 ====================
+
+const CACHE_TTL = 5 * 60 * 1000;
+const modelCache = new Map<string, CacheEntry>();
+
+function getCachedModels(): CacheEntry | null {
+  const entry = modelCache.get(currentSiteName);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    modelCache.delete(currentSiteName);
+    return null;
+  }
+  return entry;
+}
+
+function setCachedModels(models: string[] | null, error: string | null): void {
+  modelCache.set(currentSiteName, { models, error, timestamp: Date.now() });
+}
+
+function clearCurrentCache(): void {
+  modelCache.delete(currentSiteName);
+}
+
 // ==================== 模型分组 ====================
 
 function groupModels(models: string[]): Record<string, string[]> {
   const groups: Record<string, string[]> = {};
-
   for (const model of models) {
     const modelLower = model.toLowerCase();
     let groupName = "default";
-
     for (const [name, config] of Object.entries(GROUP_CONFIG)) {
       if (name === "default") continue;
       if (config.keywords?.some((kw) => modelLower.includes(kw.toLowerCase()))) {
@@ -208,11 +231,9 @@ function groupModels(models: string[]): Record<string, string[]> {
         break;
       }
     }
-
     if (!groups[groupName]) groups[groupName] = [];
     groups[groupName].push(model);
   }
-
   return groups;
 }
 
@@ -226,12 +247,11 @@ function getGroupDisplayName(groupName: string): string {
 
 // ==================== API 调用 ====================
 
-async function fetchModels(): Promise<{ models: string[] | null; error: string | null }> {
+async function fetchModelsFromApi(): Promise<{ models: string[] | null; error: string | null }> {
   const site = getCurrentSite();
   if (!site) {
     return { models: null, error: "没有可用的站点配置" };
   }
-
   try {
     const url = `${site.apiUrl.replace(/\/$/, "")}/${site.apiEndpoint.replace(/^\//, "")}`;
     const response = await fetch(url, {
@@ -240,21 +260,27 @@ async function fetchModels(): Promise<{ models: string[] | null; error: string |
         "Content-Type": "application/json",
       },
     });
-
     if (!response.ok) {
       return { models: null, error: `获取模型失败: ${response.status} ${response.statusText}` };
     }
-
     const data: ModelResponse = await response.json();
-
     if (data?.data && Array.isArray(data.data)) {
       return { models: data.data.map((m) => m.id), error: null };
     }
-
     return { models: null, error: "API 响应格式不符合预期" };
   } catch (error) {
     return { models: null, error: (error as Error).message };
   }
+}
+
+async function fetchModels(forceRefresh = false): Promise<{ models: string[] | null; error: string | null }> {
+  if (!forceRefresh) {
+    const cached = getCachedModels();
+    if (cached) return { models: cached.models, error: cached.error };
+  }
+  const result = await fetchModelsFromApi();
+  setCachedModels(result.models, result.error);
+  return result;
 }
 
 // ==================== HTML 模板 ====================
@@ -345,9 +371,7 @@ const JS_SCRIPTS = `
 
 function renderSiteSelector(): string {
   if (appConfig.sites.length <= 1) return "";
-
   const otherSites = appConfig.sites.filter((s) => s.name !== currentSiteName);
-
   return `
     <div class="fixed top-4 left-4 z-50">
       <button id="siteSelectorBtn" onclick="toggleSiteSelector()"
@@ -372,10 +396,19 @@ function renderSiteSelector(): string {
     </div>`;
 }
 
+function renderRefreshButton(): string {
+  return `
+    <a href="/refresh" class="fixed bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-[#1d1d1f] hover:bg-[#2d2d2f] text-white shadow-[0_4px_16px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)] transition-all duration-200 active:scale-95">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 11-3-6.7"/>
+        <path d="M21 3v6h-6"/>
+      </svg>
+    </a>`;
+}
+
 function renderHeader(groupCount: number, modelCount: number): string {
   const site = getCurrentSite();
   if (!site) return "";
-
   return `
     <header class="flex items-center justify-between mb-10 rounded-[20px] px-6 py-4 bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
       <div class="flex items-center space-x-5">
@@ -416,7 +449,6 @@ function renderModelCard(model: string, groupName: string): string {
 
 function renderGroupSection(groupName: string, models: string[]): string {
   const displayName = getGroupDisplayName(groupName);
-
   return `
     <section class="mb-6 rounded-[20px] bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-shadow duration-400">
       <div class="flex items-center justify-between p-5 cursor-pointer select-none rounded-t-[20px] hover:bg-black/[0.02] transition-colors"
@@ -512,6 +544,7 @@ function renderPage(models: string[] | null, error: string | null): string {
 </head>
 <body>
   ${renderSiteSelector()}
+  ${renderRefreshButton()}
   <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-[1200px] mx-auto">
       ${renderHeader(groupNames.length, models?.length || 0)}
@@ -546,6 +579,14 @@ Deno.serve(async (req: Request) => {
         headers: { "Content-Type": "application/json" },
       });
     }
+  }
+
+  if (url.pathname === "/refresh") {
+    clearCurrentCache();
+    return new Response(null, {
+      status: 302,
+      headers: { Location: "/" },
+    });
   }
 
   if (url.pathname === "/") {
