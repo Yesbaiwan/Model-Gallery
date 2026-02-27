@@ -172,6 +172,9 @@ function normalizeConfig(config: AppConfig): AppConfig {
   const sites = config.sites.map((site) => ({
     ...DEFAULT_SITE_CONFIG,
     ...site,
+    apiEndpoint: site.apiEndpoint || DEFAULT_SITE_CONFIG.apiEndpoint,
+    externalUrl: site.externalUrl || DEFAULT_SITE_CONFIG.externalUrl,
+    iconUrl: site.iconUrl || DEFAULT_SITE_CONFIG.iconUrl,
   }));
   const defaultSite = config.defaultSite && sites.find((s) => s.name === config.defaultSite) ? config.defaultSite : sites[0]?.name ?? "";
   return { sites, defaultSite };

@@ -1,6 +1,6 @@
 # Model Gallery
 
-将获取到的模型列表按关键词分组展示，专门为 NewAPI 设计，适用于展示 OpenAI 兼容的模型接口。
+一个优雅的模型列表展示工具，自动将获取到的模型按关键词分组，支持多站点切换。专为 NewAPI、OneAPI、DenoHub 等 OpenAI 兼容接口设计。
 
 ![模型列表展示](./images/图片展示.png)
 
@@ -31,19 +31,51 @@
 
 ### 配置格式
 
+**最简配置示例（使用默认值）：**
+
 ```json
 {
   "sites": [
     {
-      "name": "站点名称",
+      "name": "我的NewAPI站点",
       "apiUrl": "https://api.example.com",
-      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+      "apiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+  ]
+}
+```
+
+**多站点配置示例：**
+
+```json
+{
+  "sites": [
+    {
+      "name": "OpenAI官方",
+      "apiUrl": "https://api.openai.com",
+      "apiKey": "sk-openai-key",
       "apiEndpoint": "/v1/models",
-      "externalUrl": "https://example.com",
-      "iconUrl": "https://example.com/icon.png"
+      "externalUrl": "https://openai.com",
+      "iconUrl": "https://example.com/openai-icon.png"
+    },
+    {
+      "name": "硅基流动",
+      "apiUrl": "https://api.siliconflow.cn",
+      "apiKey": "sk-siliconflow-key",
+      "apiEndpoint": "/v1/models",
+      "externalUrl": "https://siliconflow.cn",
+      "iconUrl": "https://example.com/siliconflow-icon.png"
+    },
+    {
+      "name": "DeepSeek",
+      "apiUrl": "https://api.deepseek.com",
+      "apiKey": "sk-deepseek-key",
+      "apiEndpoint": "/models",
+      "externalUrl": "https://deepseek.com",
+      "iconUrl": "https://example.com/deepseek-icon.png"
     }
   ],
-  "defaultSite": "站点名称"
+  "defaultSite": "硅基流动"
 }
 ```
 
@@ -67,6 +99,9 @@
 
 ## 🔍 匹配流程
 
+> [!TIP]
+> 如果您的模型名称比较混乱，建议在 NewAPI 中的重定向功能修改模型名称，使其更符合分组规则，这样可以获得更好的分组效果。
+
 1. **遍历模型**
    程序会遍历从 API 获取到的每一个模型名称
 
@@ -74,22 +109,22 @@
    将模型名称转为小写后，与 `GROUP_CONFIG` 中定义的分组按顺序进行关键词匹配
 
 3. **匹配规则**
-
-- 匹配顺序按照代码中的配置顺序，从上往下进行匹配
-- 只要模型名称包含某个分组的任何一个关键词，就会被分配到该分组
-- 匹配成功后停止，不再继续匹配其他分组
+   1. 匹配顺序按照代码中的配置顺序，从上往下进行匹配
+   2. 只要模型名称包含某个分组的任何一个关键词，就会被分配到该分组
+   3. 匹配成功后停止，不再继续匹配其他分组
 
 **示例**：
 
-- `gpt-4-turbo` → 匹配 `OpenAI` 组的 `gpt` 关键词
-- `claude-3-opus` → 匹配 `Claude` 组的 `claude` 关键词
-- `glm-4` → 匹配 `智谱` 组的 `glm` 关键词
-- `unknown-model` → 未匹配到任何关键词，进入 `default` 组
+| 模型名称        | 匹配结果                              |
+| --------------- | ------------------------------------- |
+| `gpt-4-turbo`   | 匹配 `OpenAI` 组的 `gpt` 关键词       |
+| `claude-3-opus` | 匹配 `Claude` 组的 `claude` 关键词    |
+| `glm-4`         | 匹配 `智谱` 组的 `glm` 关键词         |
+| `unknown-model` | 未匹配到任何关键词，进入 `default` 组 |
 
-> [!TIP]
-> 如果您的模型名称比较混乱，建议在 NewAPI 中的重定向功能修改模型名称，使其更符合分组规则，这样可以获得更好的分组效果。
+## ➕ 额外添加分组
 
-## ➕ 添加分组
+> 您可以根据需要添加额外的分组，修改 `main.ts` 中的 `GROUP_CONFIG` 配置；也可以提交 PR 或 Issue 来建议添加新的分组。
 
 - 修改代码中的 `GROUP_CONFIG` 配置，按照格式添加您需要的分组
 - 每个分组包含 `icon`（图标 URL）和 `keywords`（多个匹配关键词），key 将作为组名
