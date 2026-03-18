@@ -548,7 +548,7 @@ function renderPage(models: string[] | null, error: string | null): string {
 <body>
   ${renderSiteSelector()}
   ${renderRefreshButton()}
-  <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen pt-16 pb-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-[1200px] mx-auto">
       ${renderHeader(groupNames.length, models?.length || 0)}
       ${renderNotification()}
