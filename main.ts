@@ -51,7 +51,7 @@ const GROUP_CONFIG: Record<string, GroupConfig> = {
   },
   Grok: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/grok.webp",
-    keywords: ["grok", "xai"],
+    keywords: ["grok", "xai", "x-ai"],
   },
   Nvidia: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/nvidia-color.webp",
@@ -71,7 +71,7 @@ const GROUP_CONFIG: Record<string, GroupConfig> = {
   },
   智谱: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/zhipu-color.webp",
-    keywords: ["zhipu", "thudm", "glm", "zai", "智谱"],
+    keywords: ["zhipu", "thudm", "glm", "zai", "智谱", "codegeex", "cogview"],
   },
   DeepSeek: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/deepseek-color.webp",
@@ -99,7 +99,7 @@ const GROUP_CONFIG: Record<string, GroupConfig> = {
   },
   百灵: {
     icon: "https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com/Model_LOGO/ling.png",
-    keywords: ["ling", "ring", "百灵"],
+    keywords: ["ling", "ring", "百灵", "inclusion"],
   },
   Mistral: {
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/mistral-color.webp",
@@ -176,7 +176,7 @@ function normalizeConfig(config: AppConfig): AppConfig {
     externalUrl: site.externalUrl || DEFAULT_SITE_CONFIG.externalUrl,
     iconUrl: site.iconUrl || DEFAULT_SITE_CONFIG.iconUrl,
   }));
-  const defaultSite = config.defaultSite && sites.find((s) => s.name === config.defaultSite) ? config.defaultSite : sites[0]?.name ?? "";
+  const defaultSite = config.defaultSite && sites.find((s) => s.name === config.defaultSite) ? config.defaultSite : (sites[0]?.name ?? "");
   return { sites, defaultSite };
 }
 
@@ -392,7 +392,7 @@ function renderSiteSelector(): string {
             class="w-full text-left px-4 py-3 text-sm text-[#1d1d1f] hover:bg-[#f5f5f7] first:rounded-t-xl last:rounded-b-xl transition-colors">
             ${site.name}
           </button>
-        `
+        `,
           )
           .join("")}
       </div>
