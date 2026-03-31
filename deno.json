@@ -1,0 +1,21 @@
+{
+  "tasks": {
+    "run": "deno run --allow-env --allow-read --allow-net src/main.ts",
+    "check": "deno check src",
+    "ci": "deno task check && deno lint && deno fmt"
+  },
+  "compilerOptions": {
+    "strict": true
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 一个优雅的模型列表展示工具，自动将获取到的模型按关键词分组，支持多站点切换。专为 NewAPI、OneAPI、DenoHub 等 OpenAI 兼容接口设计。
 
-![模型列表展示](./images/图片展示.png)
+![模型列表展示](./assets/images/图片展示.png)
 
 ## 🚀 快速开始
 
@@ -16,16 +16,9 @@
    ```
 3. 运行项目：
    ```bash
-   deno run --allow-all main.ts
+   deno task run
    ```
 4. 打开浏览器访问 http://localhost:8000
-
-### Deno Deploy 部署
-
-1. 登录 [Deno](https://dash.deno.com) Dashboard
-2. 创建一个 New Playground
-3. 粘贴 `main.ts` 代码
-4. 添加环境变量 `CONFIG_JSON`，值为配置文件的 JSON 内容
 
 ## ⚙️ 配置说明
 
@@ -106,7 +99,7 @@
    程序会遍历从 API 获取到的每一个模型名称
 
 2. **关键词匹配**
-   将模型名称转为小写后，与 `GROUP_CONFIG` 中定义的分组按顺序进行关键词匹配
+   将模型名称转为小写后，与 `src/config/groupConfig.ts` 中定义的分组按顺序进行关键词匹配
 
 3. **匹配规则**
    1. 匹配顺序按照代码中的配置顺序，从上往下进行匹配
@@ -124,7 +117,7 @@
 
 ## ➕ 额外添加分组
 
-> 您可以根据需要添加额外的分组，修改 `main.ts` 中的 `GROUP_CONFIG` 配置；也可以提交 PR 或 Issue 来建议添加新的分组。
+> 您可以根据需要添加额外的分组，修改 `src/config/groupConfig.ts` 中的 `GROUP_CONFIG` 配置；也可以提交 PR 或 Issue 来建议添加新的分组。
 
 - 修改代码中的 `GROUP_CONFIG` 配置，按照格式添加您需要的分组
 - 每个分组包含 `icon`（图标 URL）和 `keywords`（多个匹配关键词），key 将作为组名
