@@ -25,9 +25,7 @@ function validateConfig(config: AppConfig): void {
 
   if (config.defaultSite) {
     if (!config.sites.some((s) => s.name === config.defaultSite)) {
-      throw new Error(
-        `配置错误: defaultSite "${config.defaultSite}" 不在 sites 列表中`,
-      );
+      throw new Error(`配置错误: defaultSite "${config.defaultSite}" 不在 sites 列表中`);
     }
   }
 }

@@ -52,14 +52,22 @@ const routes: Route[] = [
       });
     },
   },
+  {
+    method: "GET",
+    path: "/assets/favicon.svg",
+    handler: async () => {
+      const file = await Deno.readFile("./assets/favicon.svg");
+      return new Response(file, {
+        headers: { "Content-Type": "image/svg+xml" },
+      });
+    },
+  },
 ];
 
 export function createRouter(state: AppState) {
   return (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    const route = routes.find(
-      (r) => r.method === req.method && r.path === url.pathname,
-    );
+    const route = routes.find((r) => r.method === req.method && r.path === url.pathname);
 
     if (route) {
       return Promise.resolve(route.handler(req, state));

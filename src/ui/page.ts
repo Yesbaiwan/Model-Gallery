@@ -94,25 +94,17 @@ const JS_SCRIPTS = `
   });
 `;
 
-export function renderPage(
-  state: AppState,
-  models: string[] | null,
-  error: string | null,
-): string {
+export function renderPage(state: AppState, models: string[] | null, error: string | null): string {
   const groupedModels = models ? groupModels(models) : null;
   const groupNames = groupedModels
-    ? Object.keys(groupedModels).sort(
-      (a, b) => groupedModels[b].length - groupedModels[a].length,
-    )
+    ? Object.keys(groupedModels).sort((a, b) => groupedModels[b].length - groupedModels[a].length)
     : [];
 
   let content: string;
   if (error) {
     content = renderError(error);
   } else if (groupedModels && groupNames.length > 0) {
-    content = groupNames
-      .map((name) => renderGroupSection(name, groupedModels[name]))
-      .join("");
+    content = groupNames.map((name) => renderGroupSection(name, groupedModels[name])).join("");
   } else {
     content = renderEmpty();
   }
@@ -124,7 +116,7 @@ export function renderPage(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Model Gallery</title>
-  <link rel="icon" href="https://gh-proxy.com/https://raw.githubusercontent.com/ZhuBaiwan-oOZZXX/Model-Gallery/main/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://registry.npmmirror.com">
   <link rel="preconnect" href="https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com">
   <script src="https://cdn.tailwindcss.com"></script>

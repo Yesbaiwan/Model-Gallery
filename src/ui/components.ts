@@ -5,9 +5,7 @@ import { getGroupDisplayName, getGroupIcon } from "../config/groupConfig.ts";
 export function renderSiteSelector(state: AppState): string {
   if (state.appConfig.sites.length <= 1) return "";
 
-  const otherSites = state.appConfig.sites.filter(
-    (s) => s.name !== state.currentSiteName,
-  );
+  const otherSites = state.appConfig.sites.filter((s) => s.name !== state.currentSiteName);
 
   return `
     <div class="fixed top-4 left-4 z-50">

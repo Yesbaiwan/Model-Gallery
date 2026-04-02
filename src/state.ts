@@ -15,11 +15,8 @@ export function createAppState(appConfig: AppConfig): AppState {
 }
 
 export function getCurrentSite(state: AppState): SiteConfig | null {
-  return (
-    state.appConfig.sites.find((s) => s.name === state.currentSiteName) ||
-    state.appConfig.sites[0] ||
-    null
-  );
+  return state.appConfig.sites.find((s) => s.name === state.currentSiteName) ||
+    state.appConfig.sites[0] || null;
 }
 
 export function setCurrentSite(state: AppState, siteName: string): boolean {
