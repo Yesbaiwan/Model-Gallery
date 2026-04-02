@@ -1,4 +1,6 @@
-﻿node_modules
-.trae
-.env
+﻿# 编辑器配置
+.trae/
+
+# 配置文件与密钥
 config*.json
+.env
