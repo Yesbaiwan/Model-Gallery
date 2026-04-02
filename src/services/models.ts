@@ -10,6 +10,7 @@ export function groupModels(models: string[]): Record<string, string[]> {
     const modelLower = model.toLowerCase();
     let groupName = "default";
 
+    // 按对象定义顺序匹配，先匹配到的分组优先
     for (const [name, config] of Object.entries(GROUP_CONFIG)) {
       if (name === "default") continue;
 

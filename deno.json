@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "run": "deno run --allow-env --allow-read --allow-net src/main.ts",
+    "app": "deno run --allow-env --allow-read --allow-net src/main.ts",
     "check": "deno check src",
     "ci": "deno task check && deno lint && deno fmt"
   },
@@ -11,7 +11,8 @@
     "lineWidth": 100,
     "semiColons": true,
     "singleQuote": false,
-    "proseWrap": "preserve"
+    "proseWrap": "preserve",
+    "exclude": ["src/config/groupConfig.ts"]
   },
   "lint": {
     "rules": {

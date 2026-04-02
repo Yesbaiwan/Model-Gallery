@@ -16,9 +16,19 @@
    ```
 3. 运行项目：
    ```bash
-   deno task run
+   deno task app
    ```
 4. 打开浏览器访问 http://localhost:8000
+
+### Deno Deploy platform 部署
+
+1. fork 项目到你的 GitHub 账号
+2. 登录 [Deno Deploy platform](https://console.deno.com)
+3. 点击 `+ New app` 并登录选择你的 GitHub 账号
+4. 点击 `Select repository` 选择 Model Gallery
+5. 点击 `Edit app config` 编辑项目配置，确认 Entrypoint 为 `src/main.ts` （通常自动会识别）
+6. 点击 `ADD Environment Variables` 添加环境变量，Variable Name 为 `CONFIG_JSON`，Value 为你的配置文件内容，完成后点击 `Save` 保存
+7. 点击 `Create App` 等待应用部署完成，打开 `https://model-gallery.<your-deno-organization-slug>.deno.net` 即可访问
 
 ## ⚙️ 配置说明
 
