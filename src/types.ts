@@ -13,9 +13,22 @@ export interface SiteConfig {
   iconUrl: string;
 }
 
+export interface GroupPosition {
+  type: "first" | "last" | "before";
+  target?: string;
+}
+
+export interface CustomGroupRule {
+  name: string;
+  icon?: string;
+  keywords: string[];
+  position?: GroupPosition;
+}
+
 export interface AppConfig {
   sites: SiteConfig[];
   defaultSite: string;
+  customGroupRules?: CustomGroupRule[];
 }
 
 export interface ModelResponse {

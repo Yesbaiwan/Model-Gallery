@@ -1,8 +1,11 @@
 # Model Gallery
 
-一个优雅的模型列表展示工具，自动将获取到的模型按关键词分组，支持多站点切换。专为 NewAPI、OneAPI、DenoHub 等 OpenAI 兼容接口设计。
+一个优雅的 AI 模型列表展示工具，自适应颜色主题，自动将获取到的模型按关键词分组，支持多站点切换。专为 NewAPI、OneAPI、DenoHub 等 OpenAI 兼容接口设计。
 
-![模型列表展示](./assets/images/图片展示.png)
+| 模式     | 截图                                       |
+| -------- | ------------------------------------------ |
+| 浅色模式 | ![模型列表展示](./assets/images/light.png) |
+| 深色模式 | ![模型列表展示](./assets/images/dark.png)  |
 
 ## 🚀 快速开始
 
@@ -18,16 +21,19 @@
    ```bash
    deno task app
    ```
-4. 打开浏览器访问 http://localhost:8000
+4. 打开浏览器访问 `http://localhost:8000`
 
-### Deno Deploy platform 部署
+### Deno Deploy 部署
 
-1. fork 项目到你的 GitHub 账号
+1. Fork 项目到你的 GitHub 账号
 2. 登录 [Deno Deploy platform](https://console.deno.com)
-3. 点击 `+ New app` 并登录选择你的 GitHub 账号
+3. 点击 `+ New app` 并选择你的 GitHub 账号
 4. 点击 `Select repository` 选择 Model Gallery
-5. 点击 `Edit app config` 编辑项目配置，确认 Entrypoint 为 `src/main.ts` （通常自动会识别）
-6. 点击 `ADD Environment Variables` 添加环境变量，Variable Name 为 `CONFIG_JSON`，Value 为你的配置文件内容，完成后点击 `Save` 保存
+5. 点击 `Edit app config` 编辑项目配置，确认 Entrypoint 为 `src/main.ts`（通常自动会识别）
+6. 点击 `ADD Environment Variables` 添加环境变量：
+   - **Variable Name**: `CONFIG_JSON`
+   - **Variable Value**: 你的配置文件内容
+   - 完成后点击 `Save` 保存
 7. 点击 `Create App` 等待应用部署完成，打开 `https://model-gallery.<your-deno-organization-slug>.deno.net` 即可访问
 
 ## ⚙️ 配置说明
@@ -78,60 +84,81 @@
       "iconUrl": "https://example.com/deepseek-icon.png"
     }
   ],
-  "defaultSite": "硅基流动"
+  "defaultSite": "硅基流动",
+  "customGroupRules": [
+    {
+      "name": "翻译",
+      "icon": "https://example.com/translation.webp",
+      "keywords": ["翻译"],
+      "position": { "type": "first" }
+    },
+    {
+      "name": "官转",
+      "icon": "https://example.com/official.webp",
+      "keywords": ["官转"],
+      "position": { "type": "before", "target": "DeepSeek" }
+    },
+    {
+      "name": "其他自定义",
+      "icon": "https://example.com/custom.webp",
+      "keywords": ["其他"],
+      "position": { "type": "last" }
+    }
+  ]
 }
 ```
 
-### 配置字段说明
+### `config.json` 配置字段说明
 
-| **字段名**    | **类型** | **说明**                                                  | **默认值**                                          | **是否必选** |
-| ------------- | -------- | --------------------------------------------------------- | --------------------------------------------------- | ------------ |
-| `name`        | String   | 站点名称，显示在页面顶部                                  | -                                                   | 必选         |
-| `apiUrl`      | URL      | API 基础地址                                              | -                                                   | 必选         |
-| `apiKey`      | String   | API 访问密钥                                              | -                                                   | 必选         |
-| `apiEndpoint` | String   | API 端点路径                                              | `/v1/models`                                        | 可选         |
-| `externalUrl` | URL      | 图标点击后跳转的链接                                      | `https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery` | 可选         |
-| `iconUrl`     | URL      | 站点图标                                                  | `https://docs.newapi.pro/assets/logo.png`           | 可选         |
-| `defaultSite` | String   | 默认站点名称，未指定或无效时使用 `sites` 数组的第一个站点 | -                                                   | 可选         |
+> 整个 `config.json` 文件的配置内容，可通过环境变量 `CONFIG_JSON` 传入，环境变量优先级高于文件内容。
 
-### 环境变量
+#### sites 站点配置
 
-| **变量名**    | **类型** | **说明**                                            | **是否必选** |
-| ------------- | -------- | --------------------------------------------------- | ------------ |
-| `CONFIG_JSON` | String   | 完整的配置 JSON 字符串，优先级高于 config.json 文件 | 可选         |
+| **字段名**    | **类型** | **说明**                 | **默认值**                                          | **是否必选** |
+| ------------- | -------- | ------------------------ | --------------------------------------------------- | ------------ |
+| `name`        | String   | 站点名称，显示在页面顶部 | -                                                   | 必选         |
+| `apiUrl`      | URL      | API 基础地址             | -                                                   | 必选         |
+| `apiKey`      | String   | API 访问密钥             | -                                                   | 必选         |
+| `apiEndpoint` | String   | API 端点路径             | `/v1/models`                                        | 可选         |
+| `externalUrl` | URL      | 图标点击后跳转的链接     | `https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery` | 可选         |
+| `iconUrl`     | URL      | 站点图标                 | `https://docs.newapi.pro/assets/logo.png`           | 可选         |
+
+#### customGroupRules 自定义分组规则配置（可选）
+
+| **字段名** | **类型** | **说明**                                                                                                                                                                   | **默认值**             | **是否必选** |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------ |
+| `name`     | String   | 分组名称，不能与内置分组或其他自定义分组重复                                                                                                                               | -                      | 必选         |
+| `keywords` | String[] | 关键词数组，模型名称包含任意一个关键词时，则匹配到该分组                                                                                                                   | -                      | 必选         |
+| `icon`     | URL      | 分组图标                                                                                                                                                                   | LobeHub Icons 默认图标 | 可选         |
+| `position` | Object   | 插入位置的优先级。<br>`type`：可选 `first`（最前）、`last`（最后）、`before`（插入到某分组之前）<br>当 `type` 为 `before` 时需指定 `target` 为内置分组名称（大小写不敏感） | `{ "type": "first" }`  | 可选         |
+
+> 您可以根据需要添加自定义分组规则，也可以提交 Issue 或 PR 来建议添加新的分组。
 
 ## 🔍 匹配流程
 
 > [!TIP]
-> 如果您的模型名称比较混乱，建议在 NewAPI 中的重定向功能修改模型名称，使其更符合分组规则，这样可以获得更好的分组效果。
+> 如果您的模型名称比较混乱，建议使用 NewAPI 的重定向功能，修改模型名称使其更符合分组规则，这样可以获得更好的分组效果。
 
-1. **遍历模型**
+1. **遍历模型**：
    程序会遍历从 API 获取到的每一个模型名称
 
-2. **关键词匹配**
-   将模型名称转为小写后，与 `src/config/groupConfig.ts` 中定义的分组按顺序进行关键词匹配
+2. **关键词匹配**：
+   将模型名称转为小写后，与分组配置按顺序进行关键词匹配
 
-3. **匹配规则**
-   1. 匹配顺序按照代码中的配置顺序，从上往下进行匹配
+3. **匹配规则**：
+   1. 按照分组配置顺序从上往下匹配
    2. 只要模型名称包含某个分组的任何一个关键词，就会被分配到该分组
    3. 匹配成功后停止，不再继续匹配其他分组
 
 **示例**：
 
-| 模型名称        | 匹配结果                              |
-| --------------- | ------------------------------------- |
-| `gpt-4-turbo`   | 匹配 `OpenAI` 组的 `gpt` 关键词       |
-| `claude-3-opus` | 匹配 `Claude` 组的 `claude` 关键词    |
-| `glm-4`         | 匹配 `智谱` 组的 `glm` 关键词         |
-| `unknown-model` | 未匹配到任何关键词，进入 `default` 组 |
-
-## ➕ 额外添加分组
-
-> 您可以根据需要添加额外的分组，修改 `src/config/groupConfig.ts` 中的 `GROUP_CONFIG` 配置；也可以提交 PR 或 Issue 来建议添加新的分组。
-
-- 修改代码中的 `GROUP_CONFIG` 配置，按照格式添加您需要的分组
-- 每个分组包含 `icon`（图标 URL）和 `keywords`（多个匹配关键词），key 将作为组名
-- `default` 组为默认分组，未匹配到任何关键词的模型将进入该组
+| 模型名称              | 匹配结果                                                                         |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `gpt-4-turbo`         | 匹配 `OpenAI` 组的 `gpt` 关键词                                                  |
+| `claude-3-opus`       | 匹配 `Claude` 组的 `claude` 关键词                                               |
+| `glm-4`               | 匹配 `智谱` 组的 `glm` 关键词                                                    |
+| `【翻译】deepseek-v3` | 匹配 `翻译` 组的 `翻译` 关键词（因 position 为 first，该分组排在最前，优先匹配） |
+| `unknown-model`       | 未匹配到任何关键词，进入 `default` 组                                            |
 
 ## 🙏 感谢
 

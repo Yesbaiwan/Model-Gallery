@@ -8,11 +8,10 @@
     "strict": true
   },
   "fmt": {
-    "lineWidth": 100,
+    "lineWidth": 125,
     "semiColons": true,
     "singleQuote": false,
-    "proseWrap": "preserve",
-    "exclude": ["src/config/groupConfig.ts"]
+    "proseWrap": "preserve"
   },
   "lint": {
     "rules": {

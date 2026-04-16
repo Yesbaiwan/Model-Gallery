@@ -1,4 +1,5 @@
 import type { AppConfig } from "../types.ts";
+import { BUILTIN_GROUP_NAMES } from "./groupConfig.ts";
 
 const DEFAULT_SITE_CONFIG = {
   apiEndpoint: "/v1/models",
@@ -26,6 +27,50 @@ function validateConfig(config: AppConfig): void {
   if (config.defaultSite) {
     if (!config.sites.some((s) => s.name === config.defaultSite)) {
       throw new Error(`配置错误: defaultSite "${config.defaultSite}" 不在 sites 列表中`);
+    }
+  }
+
+  if (config.customGroupRules) {
+    if (!Array.isArray(config.customGroupRules)) {
+      throw new Error("配置错误: customGroupRules 必须是数组");
+    }
+
+    const seenNames = new Set<string>(BUILTIN_GROUP_NAMES);
+
+    for (let i = 0; i < config.customGroupRules.length; i++) {
+      const rule = config.customGroupRules[i];
+
+      if (!rule.name) {
+        throw new Error(`配置错误: customGroupRules[${i}] 缺少 name 字段`);
+      }
+
+      if (seenNames.has(rule.name)) {
+        throw new Error(`配置错误: customGroupRules[${i}] ("${rule.name}") name 与内置分组或其他自定义分组重复`);
+      }
+      seenNames.add(rule.name);
+
+      if (!rule.keywords || !Array.isArray(rule.keywords) || rule.keywords.length === 0) {
+        throw new Error(`配置错误: customGroupRules[${i}] ("${rule.name}") 缺少 keywords 字段或 keywords 为空`);
+      }
+
+      if (rule.position) {
+        if (!["first", "last", "before"].includes(rule.position.type)) {
+          throw new Error(
+            `配置错误: customGroupRules[${i}] ("${rule.name}") position.type 必须是 "first"、"last" 或 "before"`,
+          );
+        }
+        if (rule.position.type === "before") {
+          if (!rule.position.target) {
+            throw new Error(`配置错误: customGroupRules[${i}] ("${rule.name}") position.type 为 "before" 时必须指定 target`);
+          }
+          const builtinLower = BUILTIN_GROUP_NAMES.map((n) => n.toLowerCase());
+          if (!builtinLower.includes(rule.position.target.toLowerCase())) {
+            throw new Error(
+              `配置错误: customGroupRules[${i}] ("${rule.name}") position.target "${rule.position.target}" 不是有效的内置分组名称`,
+            );
+          }
+        }
+      }
     }
   }
 }
@@ -61,7 +106,7 @@ function normalizeConfig(config: AppConfig): AppConfig {
     ? config.defaultSite
     : (sites[0]?.name ?? "");
 
-  return { sites, defaultSite };
+  return { sites, defaultSite, customGroupRules: config.customGroupRules };
 }
 
 export async function loadAppConfig(): Promise<AppConfig> {

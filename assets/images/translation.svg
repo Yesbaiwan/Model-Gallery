@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="32" ry="32" fill="none" />
+  <text
+    x="100"
+    y="100"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="'LXGW WenKai','PingFang SC','Source Han Sans SC'"
+    font-size="140"
+    font-weight="700"
+    fill="#1A1A1A"
+  >翻</text>
+</svg>

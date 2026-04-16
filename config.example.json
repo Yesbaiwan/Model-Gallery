@@ -25,5 +25,25 @@
       "iconUrl": "https://docs.newapi.pro/assets/logo.png"
     }
   ],
-  "defaultSite": "自定义站点1"
+  "defaultSite": "自定义站点1",
+  "customGroupRules": [
+    {
+      "name": "翻译",
+      "icon": "https://example.com/other.webp",
+      "keywords": ["翻译"],
+      "position": { "type": "first" }
+    },
+    {
+      "name": "官转",
+      "icon": "https://example.com/other.webp",
+      "keywords": ["官转"],
+      "position": { "type": "before", "target": "DeepSeek" }
+    },
+    {
+      "name": "其他自定义",
+      "icon": "https://example.com/other.webp",
+      "keywords": ["other"],
+      "position": { "type": "last" }
+    }
+  ]
 }

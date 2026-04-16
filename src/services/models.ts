@@ -1,6 +1,6 @@
 import type { ModelResponse } from "../types.ts";
 import type { AppState } from "../state.ts";
-import { GROUP_CONFIG } from "../config/groupConfig.ts";
+import { GROUP_RULES } from "../config/groupConfig.ts";
 import { getCachedModels, getCurrentSite, setCachedModels } from "../state.ts";
 
 export function groupModels(models: string[]): Record<string, string[]> {
@@ -10,12 +10,11 @@ export function groupModels(models: string[]): Record<string, string[]> {
     const modelLower = model.toLowerCase();
     let groupName = "default";
 
-    // 按对象定义顺序匹配，先匹配到的分组优先
-    for (const [name, config] of Object.entries(GROUP_CONFIG)) {
-      if (name === "default") continue;
+    for (const rule of GROUP_RULES) {
+      if (rule.name === "default") continue;
 
-      if (config.keywords?.some((kw) => modelLower.includes(kw.toLowerCase()))) {
-        groupName = name;
+      if (rule.keywords?.some((kw) => modelLower.includes(kw.toLowerCase()))) {
+        groupName = rule.name;
         break;
       }
     }
@@ -27,9 +26,7 @@ export function groupModels(models: string[]): Record<string, string[]> {
   return groups;
 }
 
-async function fetchModelsFromApi(
-  state: AppState,
-): Promise<{ models: string[] | null; error: string | null }> {
+async function fetchModelsFromApi(state: AppState): Promise<{ models: string[] | null; error: string | null }> {
   const site = getCurrentSite(state);
   if (!site) {
     return { models: null, error: "没有可用的站点配置" };

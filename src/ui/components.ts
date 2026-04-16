@@ -119,9 +119,7 @@ export function renderGroupSection(groupName: string, models: string[], index: n
         onclick="toggleGroup('${groupName}')">
         <div class="flex items-center space-x-4">
           <div class="w-11 h-11 rounded-[14px] bg-[var(--bg-input)] flex items-center justify-center overflow-hidden">
-            <img src="${
-    getGroupIcon(groupName)
-  }" alt="${displayName}" loading="lazy" class="w-7 h-7 object-cover">
+            <img src="${getGroupIcon(groupName)}" alt="${displayName}" loading="lazy" class="w-7 h-7 object-cover">
           </div>
           <div>
             <h3 class="text-[17px] font-semibold text-[var(--text-primary)] tracking-tight">${displayName}</h3>
