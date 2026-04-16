@@ -184,7 +184,8 @@ export function applyCustomGroupRules(customRules?: CustomGroupRule[]): void {
     if (targetIndex !== -1) {
       GROUP_RULES.splice(targetIndex, 0, rule);
     } else {
-      GROUP_RULES.push(rule);
+      console.warn(`[警告] 无法找到目标分组 "${target}"，自定义分组 "${rule.name}" 将插入到最前位置`);
+      GROUP_RULES.unshift(rule);
     }
   }
 
