@@ -133,6 +133,16 @@ export const GROUP_RULES: GroupRule[] = [
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/nvidia-color.webp",
     keywords: ["nvidia"],
   },
+  {
+    name: "讯飞",
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/spark-color.webp",
+    keywords: ["讯飞", "spark"],
+  },
+  {
+    name: "商汤",
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/sensenova-color.webp",
+    keywords: ["商汤", "sensenova"],
+  },
   { name: "default", icon: DEFAULT_ICON },
 ];
 
