@@ -143,6 +143,11 @@ export const GROUP_RULES: GroupRule[] = [
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/sensenova-color.webp",
     keywords: ["商汤", "sensenova"],
   },
+  {
+    name: "Agnes",
+    icon: "https://app.agnes-ai.com/images/home/logo1.svg",
+    keywords: ["agnes"],
+  },
   { name: "default", icon: DEFAULT_ICON },
 ];
 
