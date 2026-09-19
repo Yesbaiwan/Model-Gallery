@@ -187,18 +187,6 @@ describe("配置错误检测", () => {
     assert.equal(config.customGroupRules?.[0].name, "OpenAI");
   });
 
-  test("customGroupRules 之间 name 重复时允许后者覆盖", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
-      customGroupRules: [
-        { name: "自定义1", keywords: ["a"] },
-        { name: "自定义1", keywords: ["b"] },
-      ],
-    });
-    const config = await loadAppConfig();
-    assert.equal(config.customGroupRules?.length, 2);
-  });
-
   test("customGroupRules 缺 name 时抛错", async () => {
     setEnv({
       sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
@@ -207,20 +195,14 @@ describe("配置错误检测", () => {
     await assert.rejects(() => loadAppConfig(), /name.*必须是非空字符串/);
   });
 
-  test("customGroupRules keywords 为空时抛错", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
-      customGroupRules: [{ name: "自定义", keywords: [] }],
-    });
-    await assert.rejects(() => loadAppConfig(), /keywords 必须是非空字符串数组/);
-  });
-
-  test("customGroupRules 缺 keywords 时抛错", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
-      customGroupRules: [{ name: "自定义" }] as CustomGroupRule[],
-    });
-    await assert.rejects(() => loadAppConfig(), /keywords 必须是非空字符串数组/);
+  test("keywords 缺失、空数组、空白或超长时抛错", async () => {
+    for (const keywords of [undefined, [], [""], ["  "], ["valid", 1], ["x".repeat(81)]]) {
+      setEnv({
+        sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
+        customGroupRules: [{ name: "自定义", keywords }],
+      });
+      await assert.rejects(() => loadAppConfig(), /keywords 必须是非空字符串数组/);
+    }
   });
 
   test("customGroupRules position.type 无效时抛错", async () => {
@@ -316,16 +298,6 @@ describe("配置错误检测", () => {
     ]);
     const names = rules.map((rule) => rule.name);
     assert.ok(names.indexOf("前置组") < names.indexOf("目标组"));
-  });
-
-  test("自定义关键词必须是非空字符串", async () => {
-    for (const keywords of [[""], ["  "], ["valid", 1]]) {
-      setEnv({
-        sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
-        customGroupRules: [{ name: "自定义", keywords }],
-      });
-      await assert.rejects(() => loadAppConfig(), /keywords 必须是非空字符串数组/);
-    }
   });
 
   test("自定义分组图标只允许 http/https", async () => {

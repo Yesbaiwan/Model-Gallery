@@ -133,4 +133,65 @@ describe("模型服务 fetchModels", () => {
     assert.deepEqual(result, { models: null, error: "获取模型超时，请稍后重试", errorType: "timeout" });
     assert.ok(!result.error.includes(TEST_SITE.apiKey));
   });
+
+  test("首次失败后重试成功，返回模型结果且恰好请求两次", async () => {
+    let calls = 0;
+    mockFetch(async () => {
+      calls++;
+      if (calls === 1) throw new Error("connect failed");
+      return jsonResponse({ data: [{ id: "gpt-4" }] }, { status: 200 });
+    });
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.equal(calls, 2);
+    assert.deepEqual(result, { models: ["gpt-4"], error: null, errorType: null });
+  });
+
+  test("重试后仍失败，恰好请求两次并返回最后一次错误", async () => {
+    let calls = 0;
+    mockFetch(async () => {
+      calls++;
+      throw new Error("connect failed");
+    });
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.equal(calls, 2);
+    assert.deepEqual(result, { models: null, error: "模型接口请求失败，请稍后重试", errorType: "network" });
+    assert.ok(!result.error.includes(TEST_SITE.apiKey));
+  });
+
+  test("首次即成功，只请求一次不发起多余重试", async () => {
+    let calls = 0;
+    mockFetch(async () => {
+      calls++;
+      return jsonResponse({ data: [{ id: "gpt-4" }] }, { status: 200 });
+    });
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.equal(calls, 1);
+    assert.deepEqual(result, { models: ["gpt-4"], error: null, errorType: null });
+  });
+
+  test("首次超时后重试成功，每次请求使用独立的超时控制", async () => {
+    let calls = 0;
+    mockFetch((async (_input, init) => {
+      calls++;
+      if (calls === 1) {
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+            once: true,
+          });
+        });
+      }
+      return jsonResponse({ data: [{ id: "gpt-4" }] }, { status: 200 });
+    }) as FetchMock);
+
+    const result = await fetchModels(TEST_SITE, 30);
+
+    assert.equal(calls, 2);
+    assert.deepEqual(result, { models: ["gpt-4"], error: null, errorType: null });
+  });
 });

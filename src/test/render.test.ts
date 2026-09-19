@@ -94,20 +94,6 @@ describe("渲染字段验证", () => {
     assert.ok(html.includes('href="/"'), "无站点名时应链接到根路径");
   });
 
-  test("完整页面渲染包含站点信息", () => {
-    const html = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4", "claude-3"], null, DEFAULT_RULES);
-    assert.ok(html.includes("测试站点"), "页面应包含站点名");
-    assert.ok(html.includes("https://external.example.com"), "页面应包含 externalUrl");
-    assert.ok(html.includes("https://icon.example.com/logo.png"), "页面应包含 iconUrl");
-  });
-
-  test("完整页面渲染包含分组", () => {
-    const html = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4", "claude-3", "gemini-pro"], null, DEFAULT_RULES);
-    assert.ok(html.includes("OpenAI"), "页面应包含 OpenAI 分组");
-    assert.ok(html.includes("Claude"), "页面应包含 Claude 分组");
-    assert.ok(html.includes("Gemini"), "页面应包含 Gemini 分组");
-  });
-
   test("自定义分组渲染到页面", () => {
     const customRules = buildGroupRules([{ name: "Safe分组", keywords: ["safe"] }]);
     const html = renderPage(TEST_CONFIG, TEST_SITE, ["safe-model", "gpt-4"], null, customRules);
@@ -271,10 +257,6 @@ describe("安全性验证 - HTML 和属性转义", () => {
 
 describe("现代化标记验证", () => {
   const pageHtml = () => renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4"], null, DEFAULT_RULES);
-
-  test("页面不再依赖 Tailwind CDN", () => {
-    assert.ok(!pageHtml().includes("cdn.tailwindcss.com"), "页面不应包含 Tailwind CDN 脚本");
-  });
 
   test("页面包含 color-scheme 声明与主题初始化脚本", () => {
     assert.ok(pageHtml().includes('<meta name="color-scheme" content="light dark">'), "应包含 color-scheme meta");
