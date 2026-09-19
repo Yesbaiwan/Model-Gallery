@@ -1,6 +1,6 @@
 {
   "name": "model-gallery",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,js,css}\" \"*.json\" \"config.json\""
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": "24.x"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",
