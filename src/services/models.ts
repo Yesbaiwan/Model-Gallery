@@ -1,6 +1,6 @@
 import type { ModelResponse, SiteConfig } from "../types.ts";
 
-export const MODEL_FETCH_TIMEOUT_MS = 5_000;
+export const MODEL_FETCH_TIMEOUT_MS = 3_000;
 export const MAX_MODELS = 500;
 export const MAX_MODEL_ID_LENGTH = 200;
 export const MAX_RESPONSE_BYTES = 1_000_000;
@@ -16,7 +16,23 @@ export interface FetchModelsResult {
 
 const failure = (error: string, errorType: FetchErrorType): FetchModelsResult => ({ models: null, error, errorType });
 
-export async function fetchModels(site: SiteConfig, timeoutMs = MODEL_FETCH_TIMEOUT_MS): Promise<FetchModelsResult> {
+/** 请求失败时自动重试的次数。 */
+export const FETCH_ATTEMPTS = 2;
+
+export async function fetchModels(
+  site: SiteConfig,
+  timeoutMs = MODEL_FETCH_TIMEOUT_MS,
+  attempts = FETCH_ATTEMPTS,
+): Promise<FetchModelsResult> {
+  let result: FetchModelsResult = failure("模型接口请求失败，请稍后重试", "network");
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    result = await fetchModelsOnce(site, timeoutMs);
+    if (!result.errorType) return result;
+  }
+  return result;
+}
+
+async function fetchModelsOnce(site: SiteConfig, timeoutMs: number): Promise<FetchModelsResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const url = new URL(site.apiEndpoint, site.apiUrl.endsWith("/") ? site.apiUrl : `${site.apiUrl}/`).toString();
