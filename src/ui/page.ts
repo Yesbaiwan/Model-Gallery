@@ -1,6 +1,6 @@
 import type { AppConfig, GroupRule, SiteConfig } from "../types.ts";
 import { groupModels, orderedGroups } from "../config/groupConfig.ts";
-import { CSS_STYLES, JS_SCRIPTS, THEME_INIT_SCRIPT } from "./assets.ts";
+import { cssStyles, jsScripts, THEME_INIT_SCRIPT } from "./assets.ts";
 import { UI_TEXT } from "./messages.ts";
 import {
   renderEmpty,
@@ -41,7 +41,7 @@ export function renderPage(
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://registry.npmmirror.com">
   <link rel="preconnect" href="https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com">
-  <style>${CSS_STYLES}</style>
+  <style>${cssStyles()}</style>
   <script>${THEME_INIT_SCRIPT}</script>
 </head>
 <body>
@@ -58,7 +58,7 @@ export function renderPage(
       <p class="footer-text">${UI_TEXT.footer}</p>
     </footer>
   </div>
-  <script>${JS_SCRIPTS}</script>
+  <script>${jsScripts()}</script>
 </body>
 </html>`;
 }

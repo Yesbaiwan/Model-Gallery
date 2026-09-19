@@ -200,6 +200,11 @@ body::before {
   transform: scale(0.95);
 }
 
+/* svg 改为块级，消除 inline 基线对齐造成的偏移，使图标精确居中 */
+.icon-btn svg {
+  display: block;
+}
+
 .theme-toggle {
   bottom: 6rem;
   right: 1.5rem;
@@ -231,15 +236,15 @@ body::before {
 .refresh-btn {
   bottom: 1.5rem;
   right: 1.5rem;
-  background: var(--text-primary);
-  color: var(--inverse-text);
-  box-shadow: var(--shadow-xl);
-  text-decoration: none;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
 }
 
 .refresh-btn:hover {
-  opacity: 0.9;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
 }
 
 /* 主题图标：默认深色显示太阳，浅色显示月亮（图标表示点击后的目标主题） */

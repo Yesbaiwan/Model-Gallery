@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import { JS_SCRIPTS, THEME_INIT_SCRIPT } from "../ui/assets.ts";
+import { jsScripts, THEME_INIT_SCRIPT } from "../ui/assets.ts";
 
 class FakeClassList {
   private values = new Set<string>();
@@ -98,7 +98,7 @@ function createContext(storage: unknown, elements: Record<string, FakeElement> =
     setTimeout,
   } as Record<string, any>;
   vm.createContext(context);
-  vm.runInContext(JS_SCRIPTS, context);
+  vm.runInContext(jsScripts(), context);
   return { context, listeners, root };
 }
 
