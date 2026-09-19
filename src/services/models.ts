@@ -19,6 +19,9 @@ const failure = (error: string, errorType: FetchErrorType): FetchModelsResult =>
 /** 请求失败时自动重试的次数。 */
 export const FETCH_ATTEMPTS = 2;
 
+/** 值得重试的瞬态错误：超时与网络失败。其余错误（密钥无效、响应格式等）重试也不会改变结果。 */
+const RETRYABLE_ERRORS: readonly FetchErrorType[] = ["timeout", "network"];
+
 export async function fetchModels(
   site: SiteConfig,
   timeoutMs = MODEL_FETCH_TIMEOUT_MS,
@@ -27,7 +30,7 @@ export async function fetchModels(
   let result: FetchModelsResult = failure("模型接口请求失败，请稍后重试", "network");
   for (let attempt = 0; attempt < attempts; attempt++) {
     result = await fetchModelsOnce(site, timeoutMs);
-    if (!result.errorType) return result;
+    if (!result.errorType || !RETRYABLE_ERRORS.includes(result.errorType)) return result;
   }
   return result;
 }

@@ -162,6 +162,20 @@ describe("模型服务 fetchModels", () => {
     assert.ok(!result.error.includes(TEST_SITE.apiKey));
   });
 
+  test("密钥错误（401）等确定性错误不重试，只请求一次", async () => {
+    let calls = 0;
+    mockFetch(async () => {
+      calls++;
+      return jsonResponse({ error: "unauthorized" }, { status: 401, statusText: "Unauthorized" });
+    });
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.equal(calls, 1);
+    assert.equal(result.errorType, "http");
+    assert.equal(result.error, "获取模型失败: 401 Unauthorized");
+  });
+
   test("首次即成功，只请求一次不发起多余重试", async () => {
     let calls = 0;
     mockFetch(async () => {
