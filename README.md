@@ -12,7 +12,7 @@
 
 ### 本地运行
 
-1. 安装 Node.js 24.x
+1. 安装 Node.js
 2. 在项目根目录编辑 `config.json` 文件，填入你的站点配置（参考下方配置说明）
 3. 安装依赖并启动开发服务器：
    ```bash
@@ -22,6 +22,9 @@
 4. 打开浏览器访问 `http://localhost:3000`
 
 ### Vercel 部署
+
+> [!TIP]
+> Vercel 打开「获取模型失败」而本地正常？用 [cloudflare/models-proxy.js](./cloudflare/models-proxy.js) 部署反代，再把 `apiUrl` 改为反代域名即可。
 
 1. Fork 项目到你的 GitHub 账号
 2. 登录 [Vercel](https://vercel.com)，点击 `Add New Project`
@@ -105,8 +108,8 @@
 
 ### 配置字段说明
 
-> [!TIP]
-> 配置通过 `CONFIG_JSON` 环境变量或 `config.json` 文件提供，环境变量优先。本地开发时编辑 `config.json`（可参考 `config.example.json`）；Vercel 部署时请将配置内容作为 `CONFIG_JSON` 环境变量的值填入。
+> [!Important]
+> 配置通过 `CONFIG_JSON` 环境变量（优先级更高）或 `config.json` 文件提供。本地开发时编辑 `config.json`（可参考 `config.example.json`）；Vercel 部署时请将配置内容作为 `CONFIG_JSON` 环境变量的值填入。
 
 #### sites 站点配置
 
@@ -144,9 +147,6 @@
 </details>
 
 ## 💭 匹配流程
-
-> [!TIP]
-> 如果您的模型名称比较混乱，建议使用 NewAPI 的重定向功能，修改模型名称使其更符合分组规则，这样可以获得更好的分组效果。
 
 1. **遍历模型**：
    程序会遍历从 API 获取到的每一个模型名称
