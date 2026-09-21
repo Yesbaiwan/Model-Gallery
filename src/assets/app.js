@@ -80,18 +80,20 @@
     area.style.fontSize = "16px";
     document.body.appendChild(area);
     const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(area);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    area.setSelectionRange(0, text.length);
     let copied = false;
+    // 选区与复制全程受保护：无论哪一步抛异常，finally 都保证临时元素被清理
     try {
+      const range = document.createRange();
+      range.selectNodeContents(area);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      area.setSelectionRange(0, text.length);
       copied = document.execCommand("copy");
     } catch {
       copied = false;
+    } finally {
+      area.remove();
     }
-    area.remove();
     return copied;
   };
 

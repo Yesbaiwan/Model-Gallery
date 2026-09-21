@@ -69,27 +69,13 @@ describe("配置默认值", () => {
     else delete process.env.CONFIG_JSON;
   });
 
-  test("apiEndpoint 默认 /v1/models", async () => {
+  test("站点可选字段填充默认值", async () => {
     setEnv({
       sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
     });
     const config = await loadAppConfig();
     assert.equal(config.sites[0].apiEndpoint, "/v1/models");
-  });
-
-  test("externalUrl 默认值填充", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
-    });
-    const config = await loadAppConfig();
     assert.ok(config.sites[0].externalUrl, "externalUrl 应有默认值");
-  });
-
-  test("iconUrl 默认值填充", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }],
-    });
-    const config = await loadAppConfig();
     assert.ok(config.sites[0].iconUrl, "iconUrl 应有默认值");
   });
 
@@ -104,27 +90,22 @@ describe("配置默认值", () => {
     assert.equal(config.defaultSite, "站点A");
   });
 
-  test("自定义 apiEndpoint 覆盖默认值", async () => {
+  test("站点自定义字段覆盖默认值", async () => {
     setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1", apiEndpoint: "/custom/endpoint" }],
+      sites: [
+        {
+          name: "测试",
+          apiUrl: "https://api.com",
+          apiKey: "sk-1",
+          apiEndpoint: "/custom/endpoint",
+          externalUrl: "https://custom.com",
+          iconUrl: "https://custom.com/icon.png",
+        },
+      ],
     });
     const config = await loadAppConfig();
     assert.equal(config.sites[0].apiEndpoint, "/custom/endpoint");
-  });
-
-  test("自定义 externalUrl 覆盖默认值", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1", externalUrl: "https://custom.com" }],
-    });
-    const config = await loadAppConfig();
     assert.equal(config.sites[0].externalUrl, "https://custom.com");
-  });
-
-  test("自定义 iconUrl 覆盖默认值", async () => {
-    setEnv({
-      sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1", iconUrl: "https://custom.com/icon.png" }],
-    });
-    const config = await loadAppConfig();
     assert.equal(config.sites[0].iconUrl, "https://custom.com/icon.png");
   });
 });
@@ -141,17 +122,11 @@ describe("配置错误检测", () => {
     await assert.rejects(() => loadAppConfig(), /sites 为空/);
   });
 
-  test("站点缺 name 时抛错", async () => {
+  test("站点必填字段缺失时逐项抛错", async () => {
     setEnv({ sites: [{ apiUrl: "https://api.com", apiKey: "sk-1" }] });
     await assert.rejects(() => loadAppConfig(), /name.*必须是非空字符串/);
-  });
-
-  test("站点缺 apiUrl 时抛错", async () => {
     setEnv({ sites: [{ name: "测试", apiKey: "sk-1" }] });
     await assert.rejects(() => loadAppConfig(), /apiUrl.*必须是非空字符串/);
-  });
-
-  test("站点缺 apiKey 时抛错", async () => {
     setEnv({ sites: [{ name: "测试", apiUrl: "https://api.com" }] });
     await assert.rejects(() => loadAppConfig(), /apiKey.*必须是非空字符串/);
   });
@@ -384,59 +359,37 @@ describe("themes 配置", () => {
 const DEFAULT_RULES = buildGroupRules();
 
 describe("分组逻辑 - 内置分组", () => {
-  test("GPT 模型归入 OpenAI", () => {
-    const result = groupModels(["gpt-4", "gpt-3.5-turbo"], DEFAULT_RULES);
-    assert.ok(result.get("OpenAI"));
-    assert.equal(result.get("OpenAI")!.length, 2);
-  });
+  // [模型名, 期望分组]：覆盖英文/中文关键词、大小写不敏感与 default 兜底
+  const CASES: Array<[string, string]> = [
+    ["gpt-4", "OpenAI"],
+    ["gpt-3.5-turbo", "OpenAI"],
+    ["GPT-4", "OpenAI"],
+    ["claude-3-opus", "Claude"],
+    ["Claude-3", "Claude"],
+    ["gemini-pro", "Gemini"],
+    ["deepseek-chat", "DeepSeek"],
+    ["DEEPSEEK-chat", "DeepSeek"],
+    ["qwen-max", "Qwen"],
+    ["qwq-32b", "Qwen"],
+    ["通义千问-max", "Qwen"],
+    ["glm-4", "智谱"],
+    ["codegeex-2", "智谱"],
+    ["智谱glm-4", "智谱"],
+    ["unknown-model-xyz", "default"],
+  ];
 
-  test("Claude 模型归入 Claude", () => {
-    const result = groupModels(["claude-3-opus", "claude-3-sonnet"], DEFAULT_RULES);
-    assert.ok(result.get("Claude"));
-    assert.equal(result.get("Claude")!.length, 2);
-  });
-
-  test("Gemini 模型归入 Gemini", () => {
-    const result = groupModels(["gemini-pro", "gemini-1.5-flash"], DEFAULT_RULES);
-    assert.ok(result.get("Gemini"));
-  });
-
-  test("DeepSeek 模型归入 DeepSeek", () => {
-    const result = groupModels(["deepseek-chat", "deepseek-coder"], DEFAULT_RULES);
-    assert.ok(result.get("DeepSeek"));
-  });
-
-  test("Qwen 模型归入 Qwen", () => {
-    const result = groupModels(["qwen-max", "qwq-32b"], DEFAULT_RULES);
-    assert.ok(result.get("Qwen"));
-  });
-
-  test("智谱模型归入 智谱", () => {
-    const result = groupModels(["glm-4", "codegeex-2"], DEFAULT_RULES);
-    assert.ok(result.get("智谱"));
-  });
-
-  test("中文关键词 - 通义归入 Qwen", () => {
-    const result = groupModels(["通义千问-max"], DEFAULT_RULES);
-    assert.ok(result.get("Qwen"));
-  });
-
-  test("中文关键词 - 智谱归入 智谱", () => {
-    const result = groupModels(["智谱glm-4"], DEFAULT_RULES);
-    assert.ok(result.get("智谱"));
-  });
-
-  test("未匹配的模型归入 default", () => {
-    const result = groupModels(["unknown-model-xyz"], DEFAULT_RULES);
-    assert.ok(result.get("default"));
-    assert.equal(result.get("default")!.length, 1);
-  });
-
-  test("大小写不敏感匹配", () => {
-    const result = groupModels(["GPT-4", "Claude-3", "DEEPSEEK-chat"], DEFAULT_RULES);
-    assert.ok(result.get("OpenAI"), "GPT-4 应归入 OpenAI");
-    assert.ok(result.get("Claude"), "Claude-3 应归入 Claude");
-    assert.ok(result.get("DeepSeek"), "DEEPSEEK-chat 应归入 DeepSeek");
+  test("模型按关键词归入对应分组", () => {
+    const result = groupModels(
+      CASES.map(([model]) => model),
+      DEFAULT_RULES,
+    );
+    const groupOf = new Map<string, string>();
+    for (const [group, models] of result) {
+      for (const model of models) groupOf.set(model, group);
+    }
+    for (const [model, expected] of CASES) {
+      assert.equal(groupOf.get(model), expected, `${model} 应归入 ${expected}`);
+    }
   });
 });
 

@@ -1,7 +1,7 @@
 # 编辑器配置
 .trae/
 .zcode/
-.agents
+.agents/
 AGENTS.md
 
 # 配置文件与密钥

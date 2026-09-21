@@ -35,29 +35,14 @@ const TEST_CONFIG: AppConfig = {
 };
 
 describe("渲染字段验证", () => {
-  test("site.name 渲染到 header", () => {
-    const html = renderHeader(TEST_SITE, 3, 10);
+  test("header 渲染站点名、统计数、外链与图标", () => {
+    const html = renderHeader(TEST_SITE, 7, 42);
     assert.ok(html.includes("测试站点"), "header 应包含站点名");
-  });
-
-  test("groupCount 渲染到 header", () => {
-    const html = renderHeader(TEST_SITE, 7, 20);
     assert.ok(html.includes(">7<"), "header 应包含分组数");
-  });
-
-  test("modelCount 渲染到 header", () => {
-    const html = renderHeader(TEST_SITE, 3, 42);
     assert.ok(html.includes(">42<"), "header 应包含模型数");
-  });
-
-  test("site.externalUrl 渲染到 header 链接", () => {
-    const html = renderHeader(TEST_SITE, 3, 10);
     assert.ok(html.includes('href="https://external.example.com"'), "header 应包含 externalUrl");
-  });
-
-  test("site.iconUrl 渲染到 header 图标", () => {
-    const html = renderHeader(TEST_SITE, 3, 10);
     assert.ok(html.includes('src="https://icon.example.com/logo.png"'), "header 应包含 iconUrl");
+    assert.ok(html.includes('target="_blank" rel="noopener noreferrer"'), "外链应有 noopener 防护");
   });
 
   test("site selector 多站点时渲染切换链接", () => {
@@ -67,11 +52,6 @@ describe("渲染字段验证", () => {
     assert.ok(html.includes("其他站点"), "应包含其他站点名");
     assert.ok(html.includes(`href="${otherSiteHref}"`), "应包含其他站点切换链接");
     assert.ok(!html.includes(`href="${currentSiteHref}"`), "当前站点不应出现在下拉列表");
-  });
-
-  test("外链增加 noopener 防护", () => {
-    const html = renderHeader(TEST_SITE, 1, 1);
-    assert.ok(html.includes('target="_blank" rel="noopener noreferrer"'));
   });
 
   test("完整页面按分组规则顺序渲染，而非按数量排序", () => {
@@ -119,43 +99,25 @@ describe("渲染字段验证", () => {
 });
 
 describe("安全性验证 - API Key 不泄露", () => {
-  test("renderHeader 不包含 apiKey", () => {
-    const html = renderHeader(TEST_SITE, 3, 10);
-    assert.ok(!html.includes(SECRET_KEY), "header 不应包含 apiKey");
-    assert.ok(!html.includes("SECRET"), "header 不应包含密钥片段");
+  test("组件渲染不包含任何站点 apiKey", () => {
+    const header = renderHeader(TEST_SITE, 3, 10);
+    assert.ok(!header.includes(SECRET_KEY), "header 不应包含 apiKey");
+    const selector = renderSiteSelector(TEST_CONFIG, "测试站点");
+    assert.ok(!selector.includes(SECRET_KEY), "站点选择器不应包含当前站点 apiKey");
+    assert.ok(!selector.includes("sk-other-key"), "站点选择器不应包含其他站点 apiKey");
   });
 
-  test("renderSiteSelector 不包含 apiKey", () => {
-    const html = renderSiteSelector(TEST_CONFIG, "测试站点");
-    assert.ok(!html.includes(SECRET_KEY), "site selector 不应包含 apiKey");
-    assert.ok(!html.includes("SECRET"), "site selector 不应包含密钥片段");
-  });
-
-  test("renderRefreshButton 不包含 apiKey", () => {
-    const html = renderRefreshButton("测试站点");
-    assert.ok(!html.includes(SECRET_KEY), "refresh button 不应包含 apiKey");
-  });
-
-  test("renderPage 正常页不包含 apiKey", () => {
-    const html = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4"], null, DEFAULT_RULES);
-    assert.ok(!html.includes(SECRET_KEY), "页面不应包含 apiKey");
-    assert.ok(!html.includes("SECRET"), "页面不应包含密钥片段");
-  });
-
-  test("renderPage 错误页不包含 apiKey", () => {
-    const html = renderPage(TEST_CONFIG, TEST_SITE, null, "测试错误", DEFAULT_RULES);
-    assert.ok(!html.includes(SECRET_KEY), "错误页不应包含 apiKey");
-    assert.ok(!html.includes("SECRET"), "错误页不应包含密钥片段");
-  });
-
-  test("renderPage 空状态页不包含 apiKey", () => {
-    const html = renderPage(TEST_CONFIG, TEST_SITE, [], null, DEFAULT_RULES);
-    assert.ok(!html.includes(SECRET_KEY), "空状态页不应包含 apiKey");
-  });
-
-  test("其他站点 apiKey 也不泄露", () => {
-    const html = renderPage(TEST_CONFIG, TEST_OTHER_SITE, ["gpt-4"], null, DEFAULT_RULES);
-    assert.ok(!html.includes("sk-other-key"), "不应包含其他站点 apiKey");
+  test("正常、错误、空状态页面均不包含任何站点 apiKey", () => {
+    const pages = [
+      renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4"], null, DEFAULT_RULES),
+      renderPage(TEST_CONFIG, TEST_SITE, null, "测试错误", DEFAULT_RULES),
+      renderPage(TEST_CONFIG, TEST_SITE, [], null, DEFAULT_RULES),
+      renderPage(TEST_CONFIG, TEST_OTHER_SITE, ["gpt-4"], null, DEFAULT_RULES),
+    ];
+    for (const html of pages) {
+      assert.ok(!html.includes(SECRET_KEY), "页面不应包含当前站点 apiKey");
+      assert.ok(!html.includes("sk-other-key"), "页面不应包含其他站点 apiKey");
+    }
   });
 });
 

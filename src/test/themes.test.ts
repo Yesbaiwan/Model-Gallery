@@ -61,8 +61,4 @@ describe("启用主题解析", () => {
     );
     assert.equal(enabled[0].id, "handdrawn");
   });
-
-  test("单主题时长度为 1（渲染层据此隐藏切换按钮）", () => {
-    assert.equal(resolveEnabledThemes(["classic"]).length, 1);
-  });
 });

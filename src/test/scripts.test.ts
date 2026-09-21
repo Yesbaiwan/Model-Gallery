@@ -190,6 +190,94 @@ describe("浏览器交互脚本", () => {
     assert.equal(card.classList.has("copied"), false);
   });
 
+  test("安全上下文优先走 clipboard API 并写入模型名", async () => {
+    const { listeners, context } = createContext(new MemoryStorage());
+    let written = "";
+    context.navigator.clipboard = {
+      writeText: (value: string) => {
+        written = value;
+        return Promise.resolve();
+      },
+    };
+    const card = new FakeElement();
+    card.dataset.action = "copy-model";
+    card.dataset.model = "gpt-4o";
+    listeners.get("click")?.({ target: card });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(written, "gpt-4o", "应通过 writeText 写入模型名");
+    assert.equal(card.classList.has("copied"), true);
+  });
+
+  test("writeText 被拒时回退 execCommand 兜底", async () => {
+    const { listeners, context } = createContext(new MemoryStorage());
+    let execCalls = 0;
+    context.navigator.clipboard = { writeText: () => Promise.reject(new Error("denied")) };
+    context.document.execCommand = () => {
+      execCalls += 1;
+      return true;
+    };
+    const card = new FakeElement();
+    card.dataset.action = "copy-model";
+    card.dataset.model = "model";
+    listeners.get("click")?.({ target: card });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(execCalls, 1, "拒绝后应执行一次 execCommand 兜底");
+    assert.equal(card.classList.has("copied"), true);
+  });
+
+  test("data-theme-transition=false 时明暗切换跳过 View Transitions 立即生效", () => {
+    const { listeners, root, context } = createContext(new MemoryStorage());
+    root.setAttribute("data-theme-transition", "false");
+    let transitions = 0;
+    context.document.startViewTransition = () => {
+      transitions += 1;
+    };
+    const button = new FakeElement();
+    button.dataset.action = "toggle-mode";
+    listeners.get("click")?.({ target: button });
+    assert.equal(root.getAttribute("data-theme"), "dark");
+    assert.equal(transitions, 0, "classic 不应触发交叉淡入");
+  });
+
+  test("其余场景明暗切换走 View Transitions", () => {
+    const { listeners, root, context } = createContext(new MemoryStorage());
+    root.setAttribute("data-theme-transition", "true");
+    let transitions = 0;
+    context.document.startViewTransition = (update: () => void) => {
+      transitions += 1;
+      update();
+    };
+    const button = new FakeElement();
+    button.dataset.action = "toggle-mode";
+    listeners.get("click")?.({ target: button });
+    assert.equal(root.getAttribute("data-theme"), "dark");
+    assert.equal(transitions, 1, "其他主题应经交叉淡入更新");
+  });
+
+  test("execCommand 抛异常时清理临时元素且不标记已复制", () => {
+    const { listeners, context } = createContext(new MemoryStorage());
+    let removed = 0;
+    context.document.createElement = () => ({
+      value: "",
+      readOnly: false,
+      contentEditable: "",
+      style: {} as Record<string, string>,
+      setSelectionRange() {},
+      remove() {
+        removed += 1;
+      },
+    });
+    context.document.execCommand = () => {
+      throw new Error("copy blocked");
+    };
+    const card = new FakeElement();
+    card.dataset.action = "copy-model";
+    card.dataset.model = "model";
+    assert.doesNotThrow(() => listeners.get("click")?.({ target: card }));
+    assert.equal(removed, 1, "临时 textarea 必须被移除");
+    assert.equal(card.classList.has("copied"), false, "复制失败不应触发已复制反馈");
+  });
+
   test("分组与站点选择器通过事件委托切换，并维护 aria-expanded", () => {
     const groupHeader = new FakeElement();
     groupHeader.dataset.action = "toggle-group";
