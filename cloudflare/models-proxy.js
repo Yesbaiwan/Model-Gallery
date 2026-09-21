@@ -3,7 +3,7 @@
  * 使用：把 config 的站点 apiUrl 改为本 Worker 的域名。
  *       apiKey 和 apiEndpoint 保持不变。仅放行 GET /v1/models，其余路径和方法返回 404。
  */
-const UPSTREAM = "https://api.zhubaiwan.xyz";
+const UPSTREAM = "https://your-api-domain";
 
 export default {
   async fetch(request) {
