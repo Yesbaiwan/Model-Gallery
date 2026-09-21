@@ -1,0 +1,559 @@
+/* Model Gallery — Classic 经典主题层
+   完整移植自原版 app.css（commit 21b30c9，部署于 models.baiwan.de）：
+   苹果系克制品味，系统字体栈、渐变底 + 噪点、磨砂玻璃卡片、细边框、低饱和蓝强调色。
+   仅类名适配统一骨架（logo→logo-badge 等），数值全部保留原版。 */
+
+:root {
+  color-scheme: light dark;
+  /* 原版字体栈：标题与数值不使用独立展示字体，与正文同栈 */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --grid-min-width: 240px;
+
+  --bg-gradient-start: light-dark(#f5f5f7, #17171a);
+  --bg-gradient-end: light-dark(#fafafa, #1f1f22);
+  --text: light-dark(#1d1d1f, #f5f5f7);
+  --text-soft: light-dark(#86868b, #98989d);
+  --bg-card: light-dark(rgba(255, 255, 255, 0.7), rgba(44, 44, 46, 0.7));
+  --bg-card-hover: light-dark(rgba(255, 255, 255, 0.95), rgba(58, 58, 60, 0.95));
+  --card: light-dark(#ffffff, #2c2c2e);
+  --bg-input: light-dark(#f5f5f7, #3a3a3c);
+  --bg-input-hover: light-dark(#e8e8ed, #48484a);
+  --border-light: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.08));
+  --border: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.12));
+  --border-strong: light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.2));
+  --border-white: light-dark(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1));
+  --shadow-sm: light-dark(0 1px 2px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.1));
+  --shadow-md: light-dark(0 4px 12px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.3));
+  --shadow-lg: light-dark(0 4px 24px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.2));
+  --shadow-xl: light-dark(0 8px 32px rgba(0, 0, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.4));
+  --divider: light-dark(#d2d2d7, #48484a);
+  --logo-shadow: light-dark(0 4px 20px rgba(0, 0, 0, 0.08), 0 4px 20px rgba(0, 0, 0, 0.3));
+  --hover-bg: light-dark(rgba(0, 0, 0, 0.02), rgba(255, 255, 255, 0.05));
+  --accent: light-dark(#007aff, #0a84ff);
+  --accent-glow: light-dark(rgba(0, 122, 255, 0.15), rgba(100, 180, 255, 0.2));
+  /* 强调色表面上的文字/图标 */
+  --on-accent: #ffffff;
+
+  --radius: 20px;
+  --radius-sm: 16px;
+  --shadow: var(--shadow-lg);
+  /* 渐变底色（base 以 background-color 承载 --bg，经典主题直接上渐变） */
+  --bg: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+  --bg-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  --bg-size: auto;
+}
+
+/* ---------- 基础 ---------- */
+
+body {
+  line-height: 1.5;
+  position: relative;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* 细腻噪点纹理，与磨砂卡片呼应 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: var(--bg-image);
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  padding: 4rem clamp(1rem, 3.5vw, 2rem) 2rem;
+}
+
+.container {
+  max-width: 1200px;
+}
+
+.page-footer {
+  margin-top: 2rem;
+  padding-bottom: 0;
+}
+
+.footer-text {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+/* ---------- 页面页头：磨砂玻璃卡 ---------- */
+
+.page-header {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-white);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.logo-badge {
+  width: 4rem;
+  height: 4rem;
+  padding: 0.25rem;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--logo-shadow);
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.4s ease;
+}
+
+/* 徽标表面高光，hover 时浮现 */
+.logo-badge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+@media (hover: hover) {
+  .logo-badge:hover {
+    transform: scale(1.08) rotate(-2deg);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.15),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  }
+}
+@media (hover: hover) {
+  .logo-badge:hover::before {
+    opacity: 1;
+  }
+}
+
+.logo-badge:active {
+  transform: scale(0.95) rotate(0deg);
+  transition: transform 0.1s ease;
+}
+
+.logo-img {
+  border-radius: 14px;
+}
+
+.site-name {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.stats {
+  margin-right: 1.5rem;
+}
+
+/* 统计之间的细分隔线（独立 stat-divider 元素） */
+.stat-divider {
+  background: var(--divider);
+}
+
+.stat-value {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-top: 0.125rem;
+}
+
+/* ---------- 悬浮按钮 ---------- */
+
+.icon-btn,
+.site-selector-btn,
+.style-toggle-btn {
+  box-shadow: var(--shadow-lg);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.icon-btn:active,
+.site-selector-btn:active,
+.style-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* 站点 / 主题按钮：尺寸走 base（桌面 3rem、移动端 2.5rem），此处仅加深投影 */
+.site-selector-btn,
+.style-toggle-btn {
+  box-shadow: var(--shadow-lg);
+}
+@media (hover: hover) {
+  .site-selector-btn:hover,
+  .style-toggle-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.mode-toggle {
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+@media (hover: hover) {
+  .mode-toggle:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.mode-toggle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+@media (hover: hover) {
+  .mode-toggle:hover::before {
+    opacity: 1;
+  }
+}
+
+/* 刷新按钮：与主题按钮同款，白底圆钮 */
+.refresh-btn {
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+}
+@media (hover: hover) {
+  .refresh-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* 复制图标：仅经典主题渲染（原版行为）。结构：默认隐藏，副本/对勾按 copied 状态切换 */
+.copy-icon {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.copy-icon .icon-copy,
+.copy-icon .icon-check {
+  display: block;
+}
+
+.copy-icon .icon-check {
+  display: none;
+}
+
+.model-card.copied .icon-copy {
+  display: none;
+}
+
+.model-card.copied .icon-check {
+  display: block;
+}
+
+/* 桌面悬停浮现；触屏无悬停规则，点按复制后随 copied 仅短暂浮现 350ms 即消失 */
+@media (hover: hover) {
+  .model-card:hover .copy-icon {
+    opacity: 1;
+  }
+}
+
+.model-card.copied .copy-icon {
+  opacity: 1;
+}
+
+/* ---------- 站点 / 主题选择器 ---------- */
+
+.site-selector {
+  top: 1rem;
+  left: 1rem;
+}
+
+.site-selector-dropdown,
+.style-selector-dropdown {
+  border-radius: 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+}
+
+.site-selector-link,
+.style-selector-link {
+  padding: 0.75rem 1rem;
+  font-size: 14px;
+  color: var(--text);
+}
+@media (hover: hover) {
+  .site-selector-link:hover,
+  .style-selector-link:hover {
+    background: var(--hover-bg);
+  }
+}
+
+.site-selector-link + .site-selector-link,
+.style-selector-link + .style-selector-link {
+  border-top: 1px solid var(--border-light);
+}
+
+/* ---------- 分组：磨砂玻璃卡 ---------- */
+
+.group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-white);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.group-header {
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 20px 20px 0 0;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+@media (hover: hover) {
+  .group-header:hover {
+    background: var(--hover-bg);
+  }
+}
+
+.group-heading {
+  gap: 1rem;
+}
+
+.group-icon-box {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 14px;
+  background: var(--bg-input);
+}
+
+.group-icon-box img {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.group-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.group-subtitle {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-top: 0.125rem;
+}
+
+.group-chevron {
+  width: 2rem;
+  height: 2rem;
+  background: var(--bg-input);
+  color: var(--text-soft);
+  transition: background-color 0.3s ease;
+}
+@media (hover: hover) {
+  .group-chevron:hover {
+    background: var(--bg-input-hover);
+  }
+}
+
+.group-chevron svg {
+  transition: transform 0.3s ease;
+}
+
+/* 折叠动画时长与曲线按原版 */
+.group-content {
+  transition:
+    grid-template-rows 0.35s ease-out,
+    opacity 0.35s ease-out;
+}
+
+/* ---------- 模型卡片 ---------- */
+
+.model-grid {
+  /* 顶部留白：卡片 hover 上移时上边框不被 group-inner 的 overflow:hidden 裁掉 */
+  gap: 0.5rem;
+  padding: 0.25rem 1.25rem 1.25rem;
+}
+
+.model-card {
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+@media (hover: hover) {
+  .model-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+.model-card:active {
+  transform: scale(0.98);
+}
+
+.model-card-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+}
+
+.model-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.375;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.copy-icon {
+  top: 0.75rem;
+  right: 0.75rem;
+  color: var(--text-soft);
+}
+
+/* ---------- 通知 toast：磨砂玻璃条，与卡片同一材质语言 ---------- */
+
+.toast {
+  padding: 0.875rem 1.25rem;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-white);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  transition:
+    transform 0.4s ease-out,
+    opacity 0.4s ease-out;
+}
+
+.toast-hidden {
+  transform: translateX(calc(100% + 2rem)) translateY(-50%);
+}
+
+.toast-visible {
+  transform: translateX(0) translateY(0);
+}
+
+/* ---------- 错误 / 空状态：磨砂玻璃卡 ---------- */
+
+.state-card {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2.5rem;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-white);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.error-card {
+  margin-bottom: 3rem;
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.empty-card {
+  padding: 4rem;
+}
+
+.state-title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.error-card .state-title {
+  color: var(--text);
+}
+
+.state-text {
+  font-size: 15px;
+  color: var(--text-soft);
+}
+
+/* ---------- 移动端：微调字号与页头占位，其余压缩走 base ---------- */
+@media (max-width: 640px) {
+  .page-header {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .site-name {
+    font-size: 1.25rem;
+  }
+
+  .stats {
+    margin-right: 0;
+  }
+}
+
+/* ---------- 动效（原版 fadeInUp 级联入场） ---------- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-header,
+.group {
+  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 0;
+} /* 分组延迟对应原版 delay-1..5，更多分组不再增加延迟 */
+.group {
+  animation-delay: calc(min(var(--gi, 0), 5) * 0.05s);
+} /* ---------- 无障碍：减少动态效果 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .page-header,
+  .group {
+    animation: none;
+    opacity: 1;
+  }
+}

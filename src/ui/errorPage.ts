@@ -1,6 +1,6 @@
 import { escapeHtml } from "./escape.ts";
 
-/** 面向 4xx/5xx 的最小错误页，与主页面保持一致的品牌观感（独立于 app.css，避免页面过重）。 */
+/** 面向 4xx/5xx 的最小错误页，与主页面保持一致的品牌观感（独立于主题样式层，避免页面过重）。 */
 export function renderErrorPage(title: string, message: string): string {
   return `<!DOCTYPE html>
 <html lang="zh-CN">

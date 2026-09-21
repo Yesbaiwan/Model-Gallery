@@ -1,0 +1,424 @@
+/* Model Gallery — Hand-Drawn 手绘主题层
+   原则：拒绝几何精确——所有容器用不规则椭圆圆角（wobbly），绝不出现标准直角；
+   阴影一律硬偏移（无模糊）营造剪纸拼贴感；元素带轻微旋转打破网格对齐；
+   暖纸底 + 铅笔黑 + 红马克笔强调色。暗色为炭黑笔记本变体，手绘语言不变。
+   覆盖 base.css 的 token 与组件外观，追加胶带/图钉等装饰性伪元素。 */
+
+:root {
+  /* 中文回退到手写体（Google Fonts）：标题用志忙行草，正文用龙藏 */
+  --font-marker: "Kalam", "Zhi Mang Xing", "Segoe Print", "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body:
+    "Patrick Hand", "Long Cang", "Segoe Print", "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* 不规则圆角：三种手绘椭圆变体，交替使用避免重复感 */
+  --wobbly-md: 125px 14px 160px 18px / 18px 160px 14px 125px;
+  --wobbly-sm: 105px 12px 115px 12px / 12px 115px 12px 105px;
+  --wobbly-round: 48% 52% 55% 45% / 52% 46% 54% 48%;
+
+  --bg: light-dark(#fdfbf7, #262421);
+  --text: light-dark(#2d2d2d, #f0ede6);
+  --text-soft: light-dark(rgba(45, 45, 45, 0.65), rgba(240, 237, 230, 0.65));
+  --muted: light-dark(#e5e0d8, #3a3733);
+  --card: light-dark(#ffffff, #33302c);
+  --postit: light-dark(#fff9c4, #f2e394);
+  --accent: light-dark(#ff4d4d, #ff6b6b);
+  --accent-2: light-dark(#2d5da1, #7ba3d9);
+  --shadow-ink: light-dark(#2d2d2d, #0d0c0b);
+  --on-accent: #ffffff;
+
+  /* 笔记本纸纹：铅笔点阵 */
+  --bg-image: radial-gradient(var(--muted) 1px, transparent 1px);
+  --bg-size: 24px 24px;
+  --radius: var(--wobbly-md);
+  --radius-sm: var(--wobbly-sm);
+  --radius-full: var(--wobbly-round);
+}
+
+body {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 3px dashed var(--accent-2);
+  outline-offset: 3px;
+  border-radius: var(--wobbly-sm);
+}
+
+/* ---------- 页头：手绘海报 ---------- */
+
+.logo-badge {
+  width: 4.5rem;
+  height: 4.5rem;
+  padding: 6px;
+  background: var(--card);
+  border: 3px solid var(--text);
+  border-radius: var(--wobbly-round);
+  box-shadow: 4px 4px 0 0 var(--shadow-ink);
+  overflow: visible;
+  /* 歪斜统一走 --tilt，入场动画落位到同一变量，避免结束瞬间跳变 */
+  --tilt: -2deg;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.logo-img {
+  border-radius: var(--wobbly-round);
+}
+
+/* 胶带贴纸：半透明灰条压住 logo 上缘 */
+.logo-badge::before {
+  content: "";
+  position: absolute;
+  top: -0.55rem;
+  left: 50%;
+  width: 3rem;
+  height: 1.1rem;
+  /* 胶带：浅色下半透明灰纸感，暗色下降到低透明度避免白块突兀 */
+  background: light-dark(rgba(160, 158, 150, 0.5), rgba(220, 215, 200, 0.16));
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(-4deg);
+}
+
+.site-name {
+  font-family: var(--font-marker);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  transform: rotate(-0.5deg);
+}
+
+/* 统计读数：两张歪斜便利贴（便利贴恒为纸面，墨迹恒为深色以保证对比度） */
+.stat {
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 1.1rem;
+  background: var(--postit);
+  border: 2px solid #2d2d2d;
+  border-radius: var(--wobbly-sm);
+  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+}
+
+.stat:nth-child(odd) {
+  transform: rotate(-2deg);
+}
+
+.stat:nth-child(even) {
+  transform: rotate(1.5deg);
+}
+
+.stat-value {
+  font-family: var(--font-marker);
+  font-size: 1.5rem;
+  color: #1a1a1a;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #1a1a1a;
+  /* 中文标签字体笔画细，描边补墨保证清晰 */
+  -webkit-text-stroke: 0.6px #1a1a1a;
+}
+
+.footer-text {
+  font-size: 15px;
+  transform: rotate(-1deg);
+}
+
+/* ---------- 悬浮按钮：手绘圆圈 ---------- */
+
+.icon-btn,
+.site-selector-btn,
+.style-toggle-btn {
+  background: var(--card);
+  border: 3px solid var(--text);
+  border-radius: var(--wobbly-round);
+  box-shadow: 4px 4px 0 0 var(--shadow-ink);
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease;
+}
+@media (hover: hover) {
+  .icon-btn:hover,
+  .site-selector-btn:hover,
+  .style-toggle-btn:hover {
+    background: var(--accent);
+    color: var(--on-accent);
+    border-color: var(--text);
+    box-shadow: 2px 2px 0 0 var(--shadow-ink);
+    transform: translate(2px, 2px);
+  }
+}
+
+.icon-btn:active,
+.site-selector-btn:active,
+.style-toggle-btn:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+.site-selector-dropdown,
+.style-selector-dropdown {
+  border: 3px dashed var(--text);
+  border-radius: var(--wobbly-md);
+  box-shadow: 6px 6px 0 0 var(--shadow-ink);
+  transform: rotate(-0.5deg);
+}
+
+.site-selector-link,
+.style-selector-link {
+  font-size: 16px;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+@media (hover: hover) {
+  .site-selector-link:hover,
+  .style-selector-link:hover {
+    background: var(--accent);
+    color: var(--on-accent);
+    text-decoration: none;
+  }
+}
+
+.site-selector-link + .site-selector-link,
+.style-selector-link + .style-selector-link {
+  border-top: 2px dashed var(--muted);
+}
+
+/* ---------- 分组卡片：白纸卡 + 图钉 ---------- */
+
+.group {
+  background: var(--card);
+  border: 3px solid var(--text);
+  border-radius: var(--wobbly-md);
+  box-shadow: 5px 5px 0 0 var(--shadow-ink);
+}
+
+/* 相邻卡片交替歪斜，打破网格对齐（歪斜值供入场动画落位复用） */
+.group:nth-of-type(odd) {
+  --tilt: -0.4deg;
+}
+
+.group:nth-of-type(even) {
+  --tilt: 0.4deg;
+}
+
+.group {
+  transform: rotate(var(--tilt, 0deg));
+}
+
+/* 红色图钉钉住卡片上缘 */
+.group::before {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: 2rem;
+  z-index: 1;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: var(--accent);
+  border: 2px solid var(--shadow-ink);
+  border-radius: var(--wobbly-round);
+}
+
+.group-icon-box {
+  border: 2px solid var(--text);
+  border-radius: var(--wobbly-round);
+  background: transparent;
+  transform: rotate(-2deg);
+}
+
+.group-title {
+  font-family: var(--font-marker);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.group-subtitle {
+  font-size: 15px;
+  color: var(--text-soft);
+}
+
+.group-chevron {
+  border: 2px dashed var(--text);
+  border-radius: var(--wobbly-round);
+  background: transparent;
+  color: var(--text);
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
+}
+@media (hover: hover) {
+  .group-header:hover .group-chevron {
+    background: var(--postit);
+    transform: rotate(6deg);
+  }
+}
+
+.group-chevron svg {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- 模型卡片：便签纸片 ---------- */
+
+.model-card {
+  background: var(--bg);
+  border: 2px solid var(--text);
+  border-radius: var(--wobbly-sm);
+  box-shadow: 3px 3px 0 0 rgba(45, 45, 45, 0.18);
+  /* 每张卡片带固定的轻微歪斜，nth-child 交替方向 */
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease;
+}
+
+.model-grid .model-card:nth-child(odd) {
+  --tilt: -0.6deg;
+}
+
+.model-grid .model-card:nth-child(even) {
+  --tilt: 0.5deg;
+}
+
+/* hover 抖动：反向倾斜 + 向红马克笔填充（仅限真指针设备，避免触屏粘滞 hover） */
+@media (hover: hover) {
+  .model-card:hover {
+    background: var(--accent);
+    color: var(--on-accent);
+    border-color: var(--text);
+    box-shadow: 2px 2px 0 0 var(--shadow-ink);
+    transform: translate(2px, 2px) rotate(calc(var(--tilt, 0deg) * -2));
+  }
+}
+
+.model-card:active {
+  box-shadow: none;
+  transform: translate(4px, 4px) rotate(var(--tilt, 0deg));
+}
+
+.model-card.copied {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--text);
+  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+}
+
+.model-name {
+  font-size: 15.5px;
+}
+
+/* ---------- 通知 toast：黄色便利贴（纸面恒亮、墨迹恒深） ---------- */
+
+.toast {
+  background: var(--postit);
+  border: 2px solid #2d2d2d;
+  border-radius: var(--wobbly-sm);
+  box-shadow: 4px 4px 0 0 var(--shadow-ink);
+  font-size: 16px;
+  color: #2d2d2d;
+  transform: rotate(-1.5deg);
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.3s ease;
+}
+
+.toast-hidden {
+  transform: translateX(calc(100% + 2rem)) rotate(-1.5deg);
+}
+
+.toast-visible {
+  transform: translateX(0) rotate(-1.5deg);
+}
+
+/* ---------- 错误 / 空状态：图钉白卡 ---------- */
+
+.state-card {
+  background: var(--card);
+  border: 3px solid var(--text);
+  border-radius: var(--wobbly-md);
+  box-shadow: 5px 5px 0 0 var(--shadow-ink);
+  --tilt: -0.5deg;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+/* 空状态 / 错误卡顶部同样钉上图钉 */
+.state-card::before {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: var(--accent);
+  border: 2px solid var(--shadow-ink);
+  border-radius: var(--wobbly-round);
+  transform: translateX(-50%);
+}
+
+.error-card {
+  border-style: dashed;
+}
+
+.state-title {
+  font-family: var(--font-marker);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.state-text {
+  font-size: 16px;
+  color: var(--text-soft);
+}
+
+/* ---------- 移动端：压缩页头，站名与统计保持同一行 ---------- */
+
+@media (max-width: 640px) {
+  /* 圆章保持存在感（3.25rem），与 1.6rem 站名同行 */
+  .logo-badge {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .logo-badge::before {
+    width: 2.25rem;
+    height: 0.9rem;
+  }
+
+  .site-name {
+    font-size: 1.6rem;
+  }
+
+  /* 分组标题与模型名压缩，减少每张便签的纵向占位 */
+  .group-title {
+    font-size: 1.2rem;
+  }
+
+  .group-subtitle {
+    font-size: 13px;
+  }
+
+  .model-name {
+    font-size: 13.5px;
+  }
+
+  .stat {
+    padding: 0.25rem 0.6rem;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+}

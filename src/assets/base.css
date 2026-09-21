@@ -1,0 +1,704 @@
+/* Model Gallery 基础结构层
+   只负责「盒子在哪、多大、怎么响应」：布局、间距、网格、折叠机制与状态类。
+   视觉全部走 token，:root 给出一套中性灰默认值——删除任何主题文件后页面仍是完整可用的灰模版。
+   主题层（src/assets/themes/*.css）在 base 之后加载，通过覆盖 token 与追加装饰生效。 */
+
+:root {
+  color-scheme: light dark;
+
+  /* 模型卡片网格的最小列宽（auto-fill 据此自适应列数） */
+  --grid-min-width: 220px;
+
+  /* 中性默认 token，主题层按需覆盖 */
+  --font-display: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: var(--font-display);
+  --bg: light-dark(#fafafa, #141414);
+  --text: light-dark(#1d1d1f, #f5f5f7);
+  --text-soft: light-dark(#6e6e73, #98989d);
+  --muted: light-dark(#e5e5ea, #3a3a3c);
+  --card: light-dark(#ffffff, #2c2c2e);
+  --border: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12));
+  --border-strong: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.24));
+  --accent: light-dark(#007aff, #0a84ff);
+  --on-accent: #ffffff;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* ---------- 基础 ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image: var(--bg-image, none);
+  background-size: var(--bg-size, auto);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 页面布局 ---------- */
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 4.5rem clamp(1.25rem, 4vw, 2.5rem) 2.5rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  flex: 1;
+}
+
+.page-footer {
+  width: 100%;
+  max-width: 1080px;
+  margin: 2rem auto 0;
+  text-align: center;
+}
+
+.footer-text {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+/* ---------- 页头 ---------- */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.logo-link {
+  display: block;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.logo-badge {
+  position: relative;
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  overflow: hidden;
+}
+
+.logo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.site-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* 统计值上标签下，与独立分隔线元素 */
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-top: 0.125rem;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 2.5rem;
+  background: var(--border-strong);
+}
+
+/* ---------- 悬浮按钮 ---------- */
+
+.icon-btn {
+  position: fixed;
+  z-index: 50;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+@media (hover: hover) {
+  .icon-btn:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* svg 改为块级，消除 inline 基线对齐造成的偏移，使图标精确居中；所有悬浮按钮图标同尺寸 */
+.icon-btn svg,
+.style-toggle-btn svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.mode-toggle {
+  bottom: 5.5rem;
+  right: 1.5rem;
+  overflow: hidden;
+}
+
+.refresh-btn {
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+/* 明暗图标：默认深色显示太阳，浅色显示月亮（图标表示点击后的目标明暗模式） */
+.mode-toggle .icon-sun {
+  display: none;
+}
+
+.mode-toggle .icon-moon {
+  display: block;
+}
+
+:root[data-theme="dark"] .mode-toggle .icon-sun {
+  display: block;
+}
+
+:root[data-theme="dark"] .mode-toggle .icon-moon {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .mode-toggle .icon-sun {
+    display: block;
+  }
+
+  :root:not([data-theme]) .mode-toggle .icon-moon {
+    display: none;
+  }
+}
+
+/* ---------- 选择器（站点 / 主题共用下拉骨架） ---------- */
+
+.site-selector {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 50;
+}
+
+.site-selector-btn,
+.style-toggle-btn {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+@media (hover: hover) {
+  .site-selector-btn:hover,
+  .style-toggle-btn:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.site-selector-btn svg,
+.style-toggle-btn svg {
+  display: block;
+}
+
+.site-selector-dropdown,
+.style-selector-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: auto;
+  min-width: 6rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* 两个下拉都宽度自适应（min-width 兜底），渠道名/主题名过长时由 nowrap 撑开 */
+
+/* 主题选择器挂在右下按钮上方，向上展开 */
+.style-selector {
+  position: fixed;
+  bottom: 9.5rem;
+  right: 1.5rem;
+  z-index: 50;
+}
+
+.style-selector-dropdown {
+  top: auto;
+  left: auto;
+  bottom: calc(100% + 0.5rem);
+  right: 0;
+  width: auto;
+  min-width: 6rem;
+}
+
+.site-selector-dropdown[hidden],
+.style-selector-dropdown[hidden] {
+  display: none;
+}
+
+.site-selector-link,
+.style-selector-link {
+  display: block;
+  padding: 0.65rem 1.1rem;
+  font-size: 14px;
+  color: var(--text);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (hover: hover) {
+  .site-selector-link:hover,
+  .style-selector-link:hover {
+    background: var(--muted);
+  }
+}
+
+.site-selector-link + .site-selector-link,
+.style-selector-link + .style-selector-link {
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- 分组卡片 ---------- */
+
+.group {
+  position: relative;
+  margin-bottom: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.1rem 1.5rem;
+  text-align: left;
+}
+
+.group-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.group-icon-box img {
+  display: block;
+  width: 1.6rem;
+  height: 1.6rem;
+  object-fit: cover;
+}
+
+.group-heading {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+.group-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.group-subtitle {
+  display: block;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.group-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  color: var(--text-soft);
+  flex-shrink: 0;
+}
+
+.group-chevron svg {
+  transition: transform 0.25s ease;
+}
+
+.icon-rotated {
+  transform: rotate(-180deg);
+}
+
+/* 折叠动画：grid-template-rows 0fr↔1fr，无需魔法最大高度 */
+.group-content {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
+.group-content.collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.group-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ---------- 模型卡片 ---------- */
+
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--grid-min-width), 100%), 1fr));
+  gap: 0.75rem;
+  padding: 0.25rem 1.5rem 1.5rem;
+}
+
+.model-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* 分组图标随模型卡复用，无图标时退化为纯文字卡 */
+.model-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.model-card-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (hover: hover) {
+  .model-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+}
+
+.model-card:active {
+  transform: scale(0.98);
+}
+
+.model-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 通知 toast ---------- */
+
+.toast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  padding: 0.7rem 1.4rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 15px;
+  color: var(--text);
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.toast-hidden {
+  transform: translateX(calc(100% + 2rem));
+  opacity: 0;
+}
+
+.toast-visible {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* ---------- 错误 / 空状态 ---------- */
+
+.state-card {
+  max-width: 32rem;
+  margin: 3.5rem auto;
+  padding: 2.5rem;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.error-card .state-title {
+  color: var(--accent);
+}
+
+.empty-card {
+  padding: 3.5rem 2.5rem;
+}
+
+.state-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.state-text {
+  font-size: 15px;
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 无障碍：减少动态效果 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ---------- 移动端：悬浮按钮缩小贴边，内容留出底部空间 ----------
+   选择器带 :root 前缀抬高特异性，保证压缩值始终赢过主题层的桌面数值 */
+
+@media (max-width: 640px) {
+  :root .icon-btn,
+  :root .site-selector-btn,
+  :root .style-toggle-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  :root .site-selector {
+    top: 1rem;
+    left: 1rem;
+  }
+
+  :root .style-selector {
+    right: 1rem;
+    bottom: 7.5rem; /* 刷新 1rem + 按钮 2.5rem × 2 + 间距 0.75rem × 2 */
+  }
+
+  :root .mode-toggle {
+    right: 1rem;
+    bottom: 4.25rem; /* 刷新 1rem + 间距 0.75rem + 按钮 2.5rem */
+  }
+
+  :root .refresh-btn {
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  /* 底部留出刷新按钮的高度，避免页脚和最后一组卡片被遮挡 */
+  body {
+    padding-bottom: 5.5rem;
+  }
+
+  /* 页头压缩：logo、统计读数缩小，垂直居中对齐，保证站名与统计同一行 */
+  :root .page-header {
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  :root .logo-badge {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  :root .stats {
+    gap: 0.75rem;
+  }
+
+  :root .stat-value {
+    font-size: 1.1rem;
+  }
+
+  :root .stat-label {
+    font-size: 11px;
+  }
+
+  :root .stat-divider {
+    height: 2rem;
+  }
+
+  /* 移动端压缩分组纵向占位：一屏能看到更多分组 */
+  :root .group {
+    margin-bottom: 1rem;
+  }
+
+  :root .group-header {
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+
+  :root .model-grid {
+    gap: 0.5rem;
+    padding: 0.25rem 1rem 1rem;
+  }
+
+  :root .model-card {
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.7rem;
+  }
+
+  /* 滚动时淡出悬浮元素，让内容完整可读；停止后浮现（由 app.js 维护 is-scrolling） */
+  :root .icon-btn,
+  :root .site-selector,
+  :root .style-selector {
+    transition: opacity 0.25s ease;
+  }
+
+  html.is-scrolling :root .icon-btn,
+  html.is-scrolling :root .site-selector,
+  html.is-scrolling :root .style-selector {
+    opacity: 0;
+    pointer-events: none;
+  }
+}

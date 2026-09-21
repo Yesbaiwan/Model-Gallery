@@ -1,3 +1,5 @@
+import type { ThemeId } from "./ui/themes.ts";
+
 export interface GroupRule {
   name: string;
   icon: string;
@@ -29,6 +31,11 @@ export interface AppConfig {
   sites: SiteConfig[];
   defaultSite: string;
   customGroupRules?: CustomGroupRule[];
+  /**
+   * 启用的主题 id 列表（经 isThemeId 校验且去重）。
+   * 第一个为默认主题；未配置或为空时启用注册表全部主题。
+   */
+  themes?: ThemeId[];
 }
 
 export interface ModelResponse {

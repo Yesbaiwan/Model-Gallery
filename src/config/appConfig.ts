@@ -3,6 +3,7 @@ import path from "node:path";
 import type { AppConfig, CustomGroupRule, GroupPosition, SiteConfig } from "../types.ts";
 import { BUILTIN_GROUP_NAMES } from "./groupConfig.ts";
 import { isSafeUrl } from "../ui/escape.ts";
+import { isThemeId, type ThemeId } from "../ui/themes.ts";
 
 const DEFAULT_SITE_CONFIG = {
   apiEndpoint: "/v1/models",
@@ -122,6 +123,7 @@ function parseCustomGroupRule(raw: unknown, index: number): CustomGroupRule {
 
 function parseConfig(raw: unknown): AppConfig {
   if (!isRecord(raw)) throw new Error("配置错误: 根配置必须是 JSON 对象");
+  ensureKnownKeys(raw, ["sites", "defaultSite", "customGroupRules", "themes"], "根配置");
   if (!Array.isArray(raw.sites) || raw.sites.length === 0)
     throw new Error("配置错误: sites 为空，请检查 CONFIG_JSON 环境变量");
 
@@ -158,7 +160,25 @@ function parseConfig(raw: unknown): AppConfig {
     }
   }
 
-  return { sites, defaultSite: defaultSiteConfig.name, customGroupRules };
+  const themes = parseThemes(raw.themes);
+
+  return { sites, defaultSite: defaultSiteConfig.name, customGroupRules, themes };
+}
+
+/** themes：可选主题 id 数组；空数组视为未配置（启用全部主题），非法 id 或重复即启动报错 */
+function parseThemes(raw: unknown): ThemeId[] | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw)) throw new Error("配置错误: themes 必须是主题 id 数组");
+  if (raw.length === 0) return undefined;
+  const seen = new Set<string>();
+  for (const id of raw) {
+    if (typeof id !== "string" || !isThemeId(id)) {
+      throw new Error(`配置错误: themes 含无效主题 id "${String(id)}"`);
+    }
+    if (seen.has(id)) throw new Error(`配置错误: themes 中主题 "${id}" 重复`);
+    seen.add(id);
+  }
+  return raw as ThemeId[];
 }
 
 async function readConfig(configPath: string): Promise<unknown> {

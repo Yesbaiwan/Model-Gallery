@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import { jsScripts, THEME_INIT_SCRIPT } from "../ui/assets.ts";
+import { jsScripts, COLOR_MODE_INIT_SCRIPT } from "../ui/assets.ts";
 
 class FakeClassList {
   private values = new Set<string>();
@@ -85,6 +85,25 @@ function createContext(storage: unknown, elements: Record<string, FakeElement> =
     console: { error() {} },
     document: {
       documentElement: root,
+      body: {
+        appendChild() {},
+      },
+      createElement() {
+        return {
+          value: "",
+          readOnly: false,
+          contentEditable: "",
+          style: {} as Record<string, string>,
+          setSelectionRange() {},
+          remove() {},
+        };
+      },
+      createRange() {
+        return { selectNodeContents() {} };
+      },
+      execCommand() {
+        return true;
+      },
       getElementById(id: string) {
         return elements[id] ?? null;
       },
@@ -94,7 +113,13 @@ function createContext(storage: unknown, elements: Record<string, FakeElement> =
     },
     localStorage: storage,
     navigator: { clipboard: undefined as { writeText(value: string): Promise<void> } | undefined },
-    window: { localStorage: storage, matchMedia: () => ({ matches: false }), setTimeout },
+    window: {
+      localStorage: storage,
+      matchMedia: () => ({ matches: false }),
+      getSelection: () => ({ removeAllRanges() {}, addRange() {} }),
+      setTimeout,
+      clearTimeout,
+    },
     setTimeout,
   } as Record<string, any>;
   vm.createContext(context);
@@ -114,19 +139,19 @@ function createHeadContext(storage: unknown) {
     localStorage: storage,
   } as Record<string, any>;
   vm.createContext(context);
-  vm.runInContext(THEME_INIT_SCRIPT, context);
+  vm.runInContext(COLOR_MODE_INIT_SCRIPT, context);
   return root;
 }
 
-describe("主题初始化脚本（head）", () => {
-  test("恢复已保存主题", () => {
+describe("明暗模式初始化脚本（head）", () => {
+  test("恢复已保存的明暗选择", () => {
     const storage = new MemoryStorage();
     storage.setItem("theme", "dark");
     const root = createHeadContext(storage);
     assert.equal(root.attrs.get("data-theme"), "dark");
   });
 
-  test("忽略非法主题值", () => {
+  test("忽略非法明暗值", () => {
     const storage = new MemoryStorage();
     storage.setItem("theme", "weird");
     const root = createHeadContext(storage);
@@ -144,29 +169,25 @@ describe("浏览器交互脚本", () => {
     assert.ok(listeners.has("click"));
   });
 
-  test("存储异常不阻止主题点击处理", () => {
+  test("存储异常不阻止明暗点击处理", () => {
     const button = new FakeElement();
-    button.dataset.action = "toggle-theme";
+    button.dataset.action = "toggle-mode";
     const { listeners, root } = createContext(new MemoryStorage(true));
     assert.doesNotThrow(() => listeners.get("click")?.({ target: button }));
     assert.equal(root.getAttribute("data-theme"), "dark");
   });
 
-  test("剪贴板缺失或拒绝时不抛异常", async () => {
+  test("剪贴板缺失时回退 execCommand 并标记卡片已复制", async () => {
     const { listeners } = createContext(new MemoryStorage());
     const card = new FakeElement();
     card.dataset.action = "copy-model";
     card.dataset.model = "model";
     assert.doesNotThrow(() => listeners.get("click")?.({ target: card }));
+    assert.equal(card.classList.has("copied"), true);
 
-    const rejected = createContext(new MemoryStorage());
-    rejected.context.navigator.clipboard = {
-      writeText: async () => {
-        throw new Error("denied");
-      },
-    };
-    assert.doesNotThrow(() => rejected.listeners.get("click")?.({ target: card }));
-    await new Promise((resolve) => setImmediate(resolve));
+    // 350ms 反馈窗口结束后卡片还原
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    assert.equal(card.classList.has("copied"), false);
   });
 
   test("分组与站点选择器通过事件委托切换，并维护 aria-expanded", () => {
@@ -193,6 +214,26 @@ describe("浏览器交互脚本", () => {
     assert.equal(groupHeader.getAttribute("aria-expanded"), "false");
 
     selector.dataset.action = "toggle-site-selector";
+    selector.closest = () => selector;
+    click({ target: selector });
+    assert.equal(dropdown.hidden, false);
+    assert.equal(selector.getAttribute("aria-expanded"), "true");
+
+    click({ target: new FakeElement() });
+    assert.equal(dropdown.hidden, true);
+    assert.equal(selector.getAttribute("aria-expanded"), "false");
+  });
+
+  test("主题选择器通过事件委托切换，并在点击外部时收起", () => {
+    const dropdown = new FakeElement();
+    const selector = new FakeElement();
+    const { listeners } = createContext(new MemoryStorage(), {
+      styleSelectorDropdown: dropdown,
+      styleSelectorBtn: selector,
+    });
+    const click = listeners.get("click")!;
+
+    selector.dataset.action = "toggle-style-selector";
     selector.closest = () => selector;
     click({ target: selector });
     assert.equal(dropdown.hidden, false);

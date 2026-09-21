@@ -1,0 +1,182 @@
+/* Model Gallery 动效层 — 主题无关编排
+   动效原则：快而弹（120–450ms，带回弹曲线），元素逐张落位；
+   hover 反馈只动 transform/opacity；--tilt 由主题层定义歪斜角，缺省为 0。
+   入场弧线：页头元素弹落 → 分组卡片拍上 → 模型卡片涟漪（--gi/--i 服务端注入）。
+   reduced-motion 下保留 200ms 纯 opacity 淡入。 */
+
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* 弹跳落位：像纸片拍到墙上轻微回弹 */
+  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---------- 明暗切换：日/月图标交叉旋转 ----------
+   base.css 对图标有高特异性 display 规则（含暗色与系统偏好变体），
+   这里必须以相同特异性全量重声明为 flex 居中 + opacity 切换，否则被覆盖回错位排版。
+   全页色彩过渡由 app.js 的 View Transitions 交叉淡入承担，此处只管图标本身。 */
+
+.mode-toggle .icon-sun,
+.mode-toggle .icon-moon,
+:root[data-theme="dark"] .mode-toggle .icon-sun,
+:root[data-theme="dark"] .mode-toggle .icon-moon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 0.15s ease,
+    transform 0.4s var(--ease-snap);
+}
+
+.mode-toggle .icon-sun {
+  opacity: 0;
+  transform: rotate(120deg) scale(0.4);
+}
+
+.mode-toggle .icon-moon {
+  opacity: 1;
+  transform: none;
+}
+
+:root[data-theme="dark"] .mode-toggle .icon-sun {
+  opacity: 1;
+  transform: none;
+}
+
+:root[data-theme="dark"] .mode-toggle .icon-moon {
+  opacity: 0;
+  transform: rotate(-120deg) scale(0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .mode-toggle .icon-sun,
+  :root:not([data-theme]) .mode-toggle .icon-moon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      opacity 0.15s ease,
+      transform 0.4s var(--ease-snap);
+  }
+
+  :root:not([data-theme]) .mode-toggle .icon-sun {
+    opacity: 1;
+    transform: none;
+  }
+
+  :root:not([data-theme]) .mode-toggle .icon-moon {
+    opacity: 0;
+    transform: rotate(-120deg) scale(0.4);
+  }
+}
+
+/* ---------- 入场编排：拍上墙 ----------
+   弹落 keyframes 自带轻微过冲与回正，元素像便签被逐张拍上墙；
+   延迟由 --gi（组间）/ --i（组内）计算，服务端渲染时已确定。 */
+
+@keyframes slap-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96) rotate(-1.5deg);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.01) rotate(calc(var(--tilt, 0deg) + 0.6deg));
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.page-header > * {
+  animation: slap-in 0.45s var(--ease-snap) backwards;
+}
+
+.page-header > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.page-header > *:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+/* 分组卡片逐张拍上，组间 90ms 错落 */
+.group {
+  animation: slap-in 0.45s var(--ease-snap) backwards;
+  animation-delay: calc(220ms + var(--gi, 0) * 90ms);
+}
+
+/* 模型纸片涟漪：基础延迟让卡片主体先落位 */
+.model-card {
+  animation: chip-in 0.32s var(--ease-out-expo) backwards;
+  animation-delay: calc(340ms + var(--gi, 0) * 90ms + var(--i, 0) * 28ms);
+}
+
+.state-card {
+  animation: slap-in 0.45s var(--ease-snap) backwards;
+}
+
+/* ---------- 交互反馈：快而弹 ---------- */
+
+.site-selector-dropdown:not([hidden]) {
+  transform-origin: top left;
+  animation: dropdown-in 0.25s var(--ease-snap);
+}
+
+.site-selector-dropdown:not([hidden]) .site-selector-link {
+  animation: chip-in 0.25s var(--ease-out-expo) backwards;
+  /* sibling-index() 不可用时整条 delay 声明失效，退化为零延迟，安全 */
+  animation-delay: calc(40ms + sibling-index() * 25ms);
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95) rotate(-2deg);
+  }
+}
+
+/* 复制反馈：对勾带回弹弹出 */
+.model-card.copied .icon-check {
+  animation: check-pop 0.3s var(--ease-snap);
+}
+
+@keyframes check-pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* ---------- 减少动态效果：按回退阶梯降级 ----------
+   位移与错落关闭，仅保留 200ms 纯 opacity 淡入（回退阶梯第一级，始终安全）；
+   base.css 全局 reduce 块用 !important 压时长，此处以其后加载的同级 !important 恢复。 */
+
+@media (prefers-reduced-motion: reduce) {
+  .page-header > *,
+  .group,
+  .state-card,
+  .model-card {
+    animation: fade-in 0.2s ease !important;
+    animation-delay: 0ms !important;
+  }
+}

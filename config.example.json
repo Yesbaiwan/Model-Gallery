@@ -26,6 +26,7 @@
     }
   ],
   "defaultSite": "自定义站点1",
+  "themes": ["classic", "archive", "handdrawn"],
   "customGroupRules": [
     {
       "name": "翻译",

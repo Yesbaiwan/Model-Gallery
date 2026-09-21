@@ -309,6 +309,78 @@ describe("配置错误检测", () => {
   });
 });
 
+describe("themes 配置", () => {
+  before(() => delete process.env.CONFIG_JSON);
+  after(() => {
+    if (ORIGINAL_ENV) process.env.CONFIG_JSON = ORIGINAL_ENV;
+    else delete process.env.CONFIG_JSON;
+  });
+
+  const baseConfig = { sites: [{ name: "测试", apiUrl: "https://api.com", apiKey: "sk-1" }] };
+
+  test("themes 未配置时不设置字段", async () => {
+    setEnv(baseConfig);
+    const config = await loadAppConfig();
+    assert.equal(config.themes, undefined);
+  });
+
+  test("themes 空数组视为未配置", async () => {
+    setEnv({ ...baseConfig, themes: [] });
+    const config = await loadAppConfig();
+    assert.equal(config.themes, undefined);
+  });
+
+  test("themes 合法数组按配置顺序保留", async () => {
+    setEnv({ ...baseConfig, themes: ["handdrawn", "classic"] });
+    const config = await loadAppConfig();
+    assert.deepEqual(config.themes, ["handdrawn", "classic"]);
+  });
+
+  test("themes 含无效 id 时抛错", async () => {
+    setEnv({ ...baseConfig, themes: ["classic", "not-a-theme"] });
+    await assert.rejects(() => loadAppConfig(), /themes 含无效主题 id/);
+  });
+
+  test("themes 重复 id 时抛错", async () => {
+    setEnv({ ...baseConfig, themes: ["classic", "classic"] });
+    await assert.rejects(() => loadAppConfig(), /themes 中主题 "classic" 重复/);
+  });
+
+  test("themes 非数组时抛错", async () => {
+    setEnv({ ...baseConfig, themes: "classic" });
+    await assert.rejects(() => loadAppConfig(), /themes 必须是主题 id 数组/);
+  });
+
+  test("themes 全组合：任一条目非法即整体报错，全合法才通过", async () => {
+    // 3 个合法 id + 1 个非法 id，长度 1~3 的全部排列组合（4+16+64 = 84 种）
+    const candidates = ["classic", "archive", "handdrawn", "bad-theme"];
+    const combos: string[][] = [];
+    for (const a of candidates) {
+      combos.push([a]);
+      for (const b of candidates) {
+        combos.push([a, b]);
+        for (const c of candidates) {
+          combos.push([a, b, c]);
+        }
+      }
+    }
+    assert.equal(combos.length, 84);
+
+    for (const themes of combos) {
+      setEnv({ ...baseConfig, themes });
+      const hasBad = themes.includes("bad-theme");
+      const hasDuplicate = new Set(themes).size !== themes.length;
+      if (hasBad || hasDuplicate) {
+        // 含坏条目或重复条目都必须整体报错（两类错误抛出先后取决于条目位置）
+        await assert.rejects(() => loadAppConfig(), /themes (含无效主题 id "bad-theme"|中主题 .* 重复)/);
+      } else {
+        const config = await loadAppConfig();
+        assert.deepEqual(config.themes, themes);
+      }
+    }
+  });
+});
+
 const DEFAULT_RULES = buildGroupRules();
 
 describe("分组逻辑 - 内置分组", () => {

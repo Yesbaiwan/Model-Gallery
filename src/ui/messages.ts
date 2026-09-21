@@ -1,12 +1,20 @@
 // 集中管理的 UI 文案，避免散落硬编码；修改文案只需改这一处。
+// 术语约定：「主题」指皮肤层（经典/档案/手绘，配置 themes 数组、DOM data-style）；
+// 「明暗」指亮色/暗色模式（DOM data-theme 属性，CSS light-dark() 依赖它）。
 
 export const UI_TEXT = {
   pageTitle: "Model Gallery",
-  themeToggleLabel: "切换主题",
+  colorModeToggleLabel: "切换明暗",
+  styleSelectorLabel: "切换主题",
+  styleNames: {
+    classic: "经典",
+    archive: "档案",
+    handdrawn: "手绘",
+  },
   siteSelectorLabel: "切换站点",
   refreshLabel: "刷新",
   copiedToClipboard: "已复制到剪贴板",
-  groupCountLabel: "渠道",
+  groupCountLabel: "分组",
   modelCountLabel: "模型",
   modelCount: (count: number) => `${count} 个模型`,
   copyModel: (model: string) => `复制 ${model}`,

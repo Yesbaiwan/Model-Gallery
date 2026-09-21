@@ -27,6 +27,7 @@ const TEST_CONFIG = {
     },
   ],
   defaultSite: "测试站点A",
+  themes: ["classic", "handdrawn"],
 };
 
 describe("集成测试：启动服务器后检测", () => {
@@ -76,25 +77,34 @@ describe("集成测试：启动服务器后检测", () => {
 
   async function fetchText(
     path: string,
-  ): Promise<{ status: number; text: string; contentType: string | null; cacheControl: string | null }> {
+    headers: Record<string, string> = {},
+  ): Promise<{
+    status: number;
+    text: string;
+    contentType: string | null;
+    cacheControl: string | null;
+    vary: string | null;
+    setCookie: string[];
+  }> {
     return new Promise((resolve, reject) => {
-      http
-        .get(`${baseUrl}${path}`, (res) => {
-          let data = "";
-          res.setEncoding("utf-8");
-          res.on("data", (chunk) => {
-            data += chunk;
+      const req = http.get(`${baseUrl}${path}`, { headers }, (res) => {
+        let data = "";
+        res.setEncoding("utf-8");
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode || 0,
+            text: data,
+            contentType: res.headers["content-type"] || null,
+            cacheControl: res.headers["cache-control"] || null,
+            vary: res.headers.vary || null,
+            setCookie: res.headers["set-cookie"] ?? [],
           });
-          res.on("end", () => {
-            resolve({
-              status: res.statusCode || 0,
-              text: data,
-              contentType: res.headers["content-type"] || null,
-              cacheControl: res.headers["cache-control"] || null,
-            });
-          });
-        })
-        .on("error", reject);
+        });
+      });
+      req.on("error", reject);
     });
   }
 
@@ -140,5 +150,49 @@ describe("集成测试：启动服务器后检测", () => {
 
     assert.equal(status, 404);
     assert.ok(text.includes("页面不存在"));
+  });
+
+  test("URL theme 参数切换主题并下发 Set-Cookie，主页带 Vary: Cookie", async () => {
+    const home = await fetchText("/");
+    assert.equal(home.vary, "Cookie", "主页应带 Vary: Cookie");
+
+    const themed = await fetchText("/?theme=classic");
+    assert.equal(themed.status, 200);
+    assert.ok(themed.text.includes('data-style="classic"'), "应渲染 classic 主题");
+    assert.ok(
+      themed.setCookie.some((cookie) => cookie.startsWith("style=classic;")),
+      "应下发 style cookie",
+    );
+
+    const styled = await fetchText("/", { Cookie: "style=handdrawn" });
+    assert.ok(styled.text.includes('data-style="handdrawn"'), "cookie 应生效于无参数请求");
+    assert.equal(styled.setCookie.length, 0, "cookie 回访不应重复下发 Set-Cookie");
+  });
+
+  test("themes 之外的主题被拒绝并回退默认主题", async () => {
+    const { text, setCookie } = await fetchText("/", { Cookie: "style=archive" });
+    assert.ok(text.includes('data-style="classic"'), "未启用的 cookie 主题应回退默认主题 classic");
+    assert.equal(setCookie.length, 0, "回退不应下发 Set-Cookie");
+
+    const viaUrl = await fetchText("/?theme=archive");
+    assert.ok(viaUrl.text.includes('data-style="classic"'), "未启用的 URL 主题应回退默认主题 classic");
+
+    const unthemed = await fetchText("/");
+    assert.ok(unthemed.text.includes('data-style="classic"'), "无 cookie 时使用启用列表第一个主题");
+    assert.ok(unthemed.text.includes('href="/?theme=handdrawn"'), "切换下拉只列启用主题");
+    assert.ok(!unthemed.text.includes('href="/?theme=archive"'), "未启用主题不应出现在下拉中");
+  });
+
+  test("启用列表内的 theme 参数正常切换", async () => {
+    const { text } = await fetchText("/?theme=handdrawn");
+    assert.ok(text.includes('data-style="handdrawn"'), "启用列表内的主题可通过 URL 切换");
+  });
+
+  test("非法 theme 参数回退默认主题且不下发 cookie", async () => {
+    const { status, text, setCookie } = await fetchText("/?theme=not-a-theme");
+
+    assert.equal(status, 200);
+    assert.ok(text.includes(`data-style="classic"`), "非法参数应回退内置默认主题");
+    assert.equal(setCookie.length, 0, "非法参数不应下发 Set-Cookie");
   });
 });

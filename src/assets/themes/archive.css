@@ -1,0 +1,379 @@
+/* Model Gallery — Archive 档案主题层
+   档案目录 / 印刷索引的克制：等宽字体、hairline 细线分隔、纯直角、近乎无填充；
+   分组与模型以「目录条目」呈现，强调色仅用于极少数状态反馈。
+   覆盖 base.css 的 token 与组件外观。 */
+
+:root {
+  --font-body: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace;
+  --font-display: var(--font-body);
+
+  --bg: light-dark(#fcfcfa, #131311);
+  --text: light-dark(#161616, #ececea);
+  --text-soft: light-dark(#8a8a84, #8b8b86);
+  --muted: light-dark(#e8e8e2, #242420);
+  --card: light-dark(#f5f5f0, #1d1d19);
+  --border: light-dark(#dededa, #2c2c27);
+  --border-strong: light-dark(#161616, #ececea);
+  --accent: light-dark(#c8401f, #ff5c3d);
+  --on-accent: #ffffff;
+
+  --radius: 0px;
+  --radius-sm: 0px;
+  --radius-full: 0px;
+  --shadow: none;
+  --grid-min-width: 260px;
+  /* 深色模式下的账页格纹底，避免纯黑单调 */
+  --bg-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 31px,
+      rgba(236, 236, 234, 0.04) 31px,
+      rgba(236, 236, 234, 0.04) 32px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 31px,
+      rgba(236, 236, 234, 0.03) 31px,
+      rgba(236, 236, 234, 0.03) 32px
+    );
+  --bg-size: auto;
+}
+
+/* 浅色模式铺浅色版账页格纹，与深色保持同一版面语言 */
+html[data-theme="light"] {
+  --bg-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 31px,
+      rgba(22, 22, 22, 0.045) 31px,
+      rgba(22, 22, 22, 0.045) 32px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 31px,
+      rgba(22, 22, 22, 0.035) 31px,
+      rgba(22, 22, 22, 0.035) 32px
+    );
+}
+
+body {
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+}
+
+::selection {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* ---------- 页头：索引标头 ---------- */
+
+.page-header {
+  align-items: flex-end;
+  gap: 1rem 2rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+/* logo 收进档案角标：与站名同高的小方章，仍承担外链跳转 */
+.logo-link {
+  align-self: center;
+  text-decoration: none;
+}
+
+.logo-badge {
+  width: clamp(2.5rem, 7vw, 4.25rem);
+  height: clamp(2.5rem, 7vw, 4.25rem);
+  padding: 0.4rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: opacity 0.15s ease;
+}
+@media (hover: hover) {
+  .logo-badge:hover {
+    opacity: 0.6;
+  }
+}
+
+.logo-img {
+  /* 保留图标原色，仅压一点饱和度融入档案版面 */
+  filter: saturate(0.75);
+}
+
+.site-name {
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* 统计读数：等宽数字，无装饰线 */
+.stats {
+  gap: 2.5rem;
+  padding-top: 0.75rem;
+}
+
+.stat {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-soft);
+}
+
+.footer-text {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- 悬浮按钮：方形线框 ---------- */
+
+.icon-btn,
+.site-selector-btn,
+.style-toggle-btn {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  box-shadow: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+@media (hover: hover) {
+  .icon-btn:hover,
+  .site-selector-btn:hover,
+  .style-toggle-btn:hover {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+    transform: none;
+  }
+}
+
+.icon-btn:active,
+.site-selector-btn:active,
+.style-toggle-btn:active {
+  transform: none;
+}
+
+.site-selector-dropdown,
+.style-selector-dropdown {
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 0 var(--border);
+}
+
+.site-selector-link,
+.style-selector-link {
+  font-size: 13px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+@media (hover: hover) {
+  .site-selector-link:hover,
+  .style-selector-link:hover {
+    background: var(--text);
+    color: var(--bg);
+  }
+}
+
+.site-selector-link + .site-selector-link,
+.style-selector-link + .style-selector-link {
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- 分组：目录条目 ---------- */
+
+.group {
+  margin-bottom: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.group-header {
+  padding: 1.25rem 0.25rem;
+}
+@media (hover: hover) {
+  .group-header:hover {
+    background: var(--card);
+  }
+}
+
+.group-icon-box {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0;
+  background: none;
+}
+
+.group-icon-box img,
+.model-card-icon img {
+  width: 1.35rem;
+  height: 1.35rem;
+  /* 保留图标原色，仅压一点饱和度融入档案版面 */
+  filter: saturate(0.75);
+}
+
+.group-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.group-subtitle {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.group-chevron {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text-soft);
+}
+@media (hover: hover) {
+  .group-header:hover .group-chevron {
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+}
+
+/* ---------- 模型：档案行 ---------- */
+
+.model-grid {
+  gap: 0;
+  grid-template-columns: 1fr;
+  padding: 0 0.25rem 1.25rem;
+}
+
+.model-card {
+  min-height: 0;
+  gap: 0.5rem;
+  padding: 0.55rem 0.5rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--muted);
+  border-radius: 0;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+@media (hover: hover) {
+  .model-card:hover {
+    background: var(--card);
+    border-bottom-color: var(--accent);
+    transform: none;
+  }
+}
+
+.model-card:active {
+  transform: none;
+}
+
+.model-card.copied {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+
+.model-name {
+  font-size: 13.5px;
+}
+
+/* ---------- 通知 toast：纸面墨框，与卡片同材质语言 ---------- */
+
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 0 var(--border);
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ---------- 错误 / 空状态：线框告示 ---------- */
+
+.state-card {
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 0 var(--border);
+  text-align: left;
+}
+
+.state-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.error-card .state-title {
+  color: var(--accent);
+}
+
+.state-text {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+/* ---------- 移动端：压缩页头，站名与统计保持同一行 ---------- */
+
+@media (max-width: 640px) {
+  /* 桌面端是 flex-end 对齐（大标压底线），移动端一行排列需改为垂直居中 */
+  .page-header {
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  .logo-badge {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .site-name {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .stats {
+    gap: 1.25rem;
+    padding-top: 0;
+  }
+
+  .stat {
+    padding-top: 0.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+}
