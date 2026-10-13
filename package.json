@@ -1,6 +1,6 @@
 {
   "name": "model-gallery",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,8 +14,8 @@
     "node": "24.x"
   },
   "devDependencies": {
-    "@types/node": "^24.13.2",
-    "prettier": "^3.9.6",
-    "typescript": "^6.0.3"
+    "@types/node": "^24.19.2",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
   }
 }

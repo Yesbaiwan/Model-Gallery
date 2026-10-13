@@ -2,7 +2,6 @@
 .trae/
 .zcode/
 .agents/
-AGENTS.md
 
 # 配置文件与密钥
 configs/
