@@ -140,6 +140,11 @@ export const BUILTIN_GROUP_RULES: readonly GroupRule[] = [
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/sensenova-color.webp",
     keywords: ["商汤", "sensenova"],
   },
+  {
+    name: "小红书",
+    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/dotsstudio.webp",
+    keywords: ["dots", "note", "小红书", "xiaohongshu"],
+  },
   { name: "Agnes", icon: "https://app.agnes-ai.com/images/home/logo1.svg", keywords: ["agnes"] },
   { name: "default", icon: DEFAULT_ICON },
 ];

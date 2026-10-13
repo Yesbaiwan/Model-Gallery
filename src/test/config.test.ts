@@ -375,6 +375,8 @@ describe("分组逻辑 - 内置分组", () => {
     ["glm-4", "智谱"],
     ["codegeex-2", "智谱"],
     ["智谱glm-4", "智谱"],
+    ["dots.llm1", "小红书"],
+    ["RedNote-v1", "小红书"],
     ["unknown-model-xyz", "default"],
   ];
 
