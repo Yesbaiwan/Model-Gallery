@@ -7,7 +7,7 @@ import { isThemeId, type ThemeId } from "../ui/themes.ts";
 
 const DEFAULT_SITE_CONFIG = {
   apiEndpoint: "/v1/models",
-  externalUrl: "https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery",
+  externalUrl: "https://github.com/Yesbaiwan/Model-Gallery",
   iconUrl: "https://docs.newapi.pro/assets/logo.png",
 } as const;
 

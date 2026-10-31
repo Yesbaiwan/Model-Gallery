@@ -126,7 +126,7 @@
 | `apiUrl`      | URL      | API 基础地址             | -                                                   | 必选         |
 | `apiKey`      | String   | API 访问密钥             | -                                                   | 必选         |
 | `apiEndpoint` | String   | API 端点路径             | `/v1/models`                                        | 可选         |
-| `externalUrl` | URL      | 图标点击后跳转的链接     | `https://github.com/ZhuBaiwan-oOZZXX/Model-Gallery` | 可选         |
+| `externalUrl` | URL      | 图标点击后跳转的链接     | `https://github.com/Yesbaiwan/Model-Gallery` | 可选         |
 | `iconUrl`     | URL      | 站点图标                 | `https://docs.newapi.pro/assets/logo.png`           | 可选         |
 
 #### themes 主题配置（可选）
