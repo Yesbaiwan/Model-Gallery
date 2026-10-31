@@ -17,7 +17,7 @@ export const BUILTIN_GROUP_RULES: readonly GroupRule[] = [
   },
   {
     name: "MiniMax",
-    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/minimax-color.webp",
+    icon: "https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com/Model_LOGO/minimax-color.svg",
     keywords: ["minimax", "hailuo"],
   },
   {
@@ -107,7 +107,7 @@ export const BUILTIN_GROUP_RULES: readonly GroupRule[] = [
   },
   {
     name: "快手",
-    icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/kwaipilot-color.webp",
+    icon: "https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com/Model_LOGO/kwaipilot-color.svg",
     keywords: ["kat", "kolors", "kling", "快手", "可图", "可灵"],
   },
   {
@@ -144,6 +144,11 @@ export const BUILTIN_GROUP_RULES: readonly GroupRule[] = [
     name: "小红书",
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/dotsstudio.webp",
     keywords: ["dots", "note", "小红书", "xiaohongshu"],
+  },
+  {
+    name: "电信星辰",
+    icon: "https://sf-maas-uat-prod.oss-cn-shanghai.aliyuncs.com/Model_LOGO/TeleAI.svg",
+    keywords: ["xingchen", "星辰", "teleai"],
   },
   { name: "Agnes", icon: "https://app.agnes-ai.com/images/home/logo1.svg", keywords: ["agnes"] },
   { name: "default", icon: DEFAULT_ICON },
