@@ -196,11 +196,6 @@ body::before {
   transform: scale(0.95);
 }
 
-/* 站点 / 主题按钮：尺寸走 base（桌面 3rem、移动端 2.5rem），此处仅加深投影 */
-.site-selector-btn,
-.style-toggle-btn {
-  box-shadow: var(--shadow-lg);
-}
 @media (hover: hover) {
   .site-selector-btn:hover,
   .style-toggle-btn:hover {
@@ -343,10 +338,6 @@ body::before {
   }
 }
 
-.group-heading {
-  gap: 1rem;
-}
-
 .group-icon-box {
   width: 2.75rem;
   height: 2.75rem;
@@ -466,14 +457,6 @@ body::before {
   transition:
     transform 0.4s ease-out,
     opacity 0.4s ease-out;
-}
-
-.toast-hidden {
-  transform: translateX(calc(100% + 2rem)) translateY(-50%);
-}
-
-.toast-visible {
-  transform: translateX(0) translateY(0);
 }
 
 /* ---------- 错误 / 空状态：磨砂玻璃卡 ---------- */

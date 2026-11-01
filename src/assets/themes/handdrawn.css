@@ -382,43 +382,44 @@ body {
 /* ---------- 移动端：压缩页头，站名与统计保持同一行 ---------- */
 
 @media (max-width: 640px) {
+  /* 选择器带 :root 前缀，与 base.css 移动端约定一致；主题文件后加载，同特异性即可胜出 */
   /* 圆章保持存在感（3.25rem），与 1.6rem 站名同行 */
-  .logo-badge {
+  :root .logo-badge {
     width: 3.25rem;
     height: 3.25rem;
   }
 
-  .logo-badge::before {
+  :root .logo-badge::before {
     width: 2.25rem;
     height: 0.9rem;
   }
 
-  .site-name {
+  :root .site-name {
     font-size: 1.6rem;
   }
 
   /* 分组标题与模型名压缩，减少每张便签的纵向占位 */
-  .group-title {
+  :root .group-title {
     font-size: 1.2rem;
   }
 
-  .group-subtitle {
+  :root .group-subtitle {
     font-size: 13px;
   }
 
-  .model-name {
+  :root .model-name {
     font-size: 13.5px;
   }
 
-  .stat {
+  :root .stat {
     padding: 0.25rem 0.6rem;
   }
 
-  .stat-value {
+  :root .stat-value {
     font-size: 1.1rem;
   }
 
-  .stat-label {
+  :root .stat-label {
     font-size: 11px;
   }
 }

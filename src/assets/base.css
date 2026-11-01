@@ -306,6 +306,8 @@ body {
   left: 0;
   width: auto;
   min-width: 6rem;
+  /* 超长站点名由 nowrap 撑宽，必须限制在视口内，否则窄屏会溢出到屏幕外 */
+  max-width: calc(100vw - 2rem);
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -695,9 +697,9 @@ body {
     transition: opacity 0.25s ease;
   }
 
-  html.is-scrolling :root .icon-btn,
-  html.is-scrolling :root .site-selector,
-  html.is-scrolling :root .style-selector {
+  :root.is-scrolling .icon-btn,
+  :root.is-scrolling .site-selector,
+  :root.is-scrolling .style-selector {
     opacity: 0;
     pointer-events: none;
   }

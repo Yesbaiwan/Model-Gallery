@@ -348,32 +348,43 @@ body {
 /* ---------- 移动端：压缩页头，站名与统计保持同一行 ---------- */
 
 @media (max-width: 640px) {
+  /* 选择器带 :root 前缀，与 base.css 移动端约定一致；主题文件后加载，同特异性即可胜出 */
   /* 桌面端是 flex-end 对齐（大标压底线），移动端一行排列需改为垂直居中 */
-  .page-header {
+  :root .page-header {
     align-items: center;
     gap: 0.75rem;
     padding-bottom: 1rem;
   }
 
-  .logo-badge {
+  :root .logo-badge {
     width: 2.5rem;
     height: 2.5rem;
   }
 
-  .site-name {
+  :root .site-name {
     font-size: clamp(1.5rem, 6vw, 2rem);
   }
 
-  .stats {
+  :root .stats {
     gap: 1.25rem;
     padding-top: 0;
   }
 
-  .stat {
+  :root .stat {
     padding-top: 0.25rem;
   }
 
-  .stat-value {
+  :root .stat-value {
     font-size: 1.2rem;
+  }
+
+  /* 档案列表是连续目录：行间不留缝，靠分隔线区分，不被 base 的卡片网格间距打断 */
+  :root .model-grid {
+    gap: 0;
+  }
+
+  :root .model-card {
+    min-height: 0;
+    padding: 0.55rem 0.5rem;
   }
 }

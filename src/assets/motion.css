@@ -142,7 +142,14 @@
   animation: dropdown-in 0.25s var(--ease-snap);
 }
 
-.site-selector-dropdown:not([hidden]) .site-selector-link {
+/* 主题下拉向上展开，以右下角为缩放原点，与站点下拉保持同一节奏 */
+.style-selector-dropdown:not([hidden]) {
+  transform-origin: bottom right;
+  animation: dropdown-in 0.25s var(--ease-snap);
+}
+
+.site-selector-dropdown:not([hidden]) .site-selector-link,
+.style-selector-dropdown:not([hidden]) .style-selector-link {
   animation: chip-in 0.25s var(--ease-out-expo) backwards;
   /* sibling-index() 不可用时整条 delay 声明失效，退化为零延迟，安全 */
   animation-delay: calc(40ms + sibling-index() * 25ms);
