@@ -374,6 +374,13 @@ body {
   box-shadow: var(--shadow);
 }
 
+/* 分组标题用 heading 提供语义，但视觉样式全部沿用原按钮布局 */
+.group-title-wrap {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
 .group-header {
   display: flex;
   align-items: center;

@@ -28,7 +28,6 @@ class FakeElement {
   hidden = false;
   inert = false;
   dataset: Record<string, string> = {};
-  parentElement: FakeElement | null = null;
   children = new Map<string, FakeElement>();
   private attrs = new Map<string, string>();
   setAttribute(name: string, value: string): void {
@@ -284,14 +283,13 @@ describe("浏览器交互脚本", () => {
     groupHeader.dataset.action = "toggle-group";
     const content = new FakeElement();
     const icon = new FakeElement();
-    const wrapper = new FakeElement();
-    wrapper.children.set('[data-role="group-content"]', content);
-    wrapper.children.set('[data-role="group-icon"]', icon);
-    groupHeader.parentElement = wrapper;
+    groupHeader.setAttribute("aria-controls", "group-content-0");
+    groupHeader.children.set('[data-role="group-icon"]', icon);
     groupHeader.closest = () => groupHeader;
     const dropdown = new FakeElement();
     const selector = new FakeElement();
     const { listeners } = createContext(new MemoryStorage(), {
+      "group-content-0": content,
       siteSelectorDropdown: dropdown,
       siteSelectorBtn: selector,
     });

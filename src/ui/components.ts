@@ -53,6 +53,7 @@ export function renderSiteSelector(appConfig: AppConfig, currentSiteName: string
 }
 
 export function renderRefreshButton(currentSiteName: string): string {
+  // 页面本身不缓存，刷新只要重新请求当前站点即可
   const href = currentSiteName ? `/?site=${encodeURIComponent(currentSiteName)}` : "/";
   return `<a href="${escapeAttribute(href)}" class="icon-btn refresh-btn" aria-label="${UI_TEXT.refreshLabel}" title="${UI_TEXT.refreshLabel}">${ICON_REFRESH}</a>`;
 }
@@ -112,7 +113,8 @@ export function renderHeader(site: SiteConfig, groupCount: number, modelCount: n
 }
 
 export function renderNotification(): string {
-  return `<div id="notification" class="toast toast-hidden" role="status" aria-live="polite">${UI_TEXT.copiedToClipboard}</div>`;
+  // data-message 供 app.js 重复触发 live region 播报时复用，避免在脚本里硬编码文案
+  return `<div id="notification" class="toast toast-hidden" role="status" aria-live="polite" data-message="${escapeAttribute(UI_TEXT.copiedToClipboard)}">${UI_TEXT.copiedToClipboard}</div>`;
 }
 
 function renderModelCard(model: string, index: number, icon: string, showCopyIcon: boolean): string {
@@ -136,19 +138,23 @@ export function renderGroupSection(
   const displayName =
     group.name.toLowerCase() === "default" ? UI_TEXT.defaultGroupName : getGroupDisplayName(group.name, rules);
   const icon = sanitizeUrl(group.icon, "");
+  const contentId = `group-content-${index}`;
   return `
     <section class="group" style="--gi:${Math.min(index, ANIMATED_GROUP_LIMIT)}">
-      <button type="button" class="group-header" data-action="toggle-group" aria-expanded="true">
-        <span class="group-icon-box">
-          ${icon ? `<img src="${escapeAttribute(icon)}" alt="" loading="lazy">` : ""}
-        </span>
-        <span class="group-heading">
-          <span class="group-title">${escapeHtml(displayName)}</span>
-          <span class="group-subtitle">${UI_TEXT.modelCount(models.length)}</span>
-        </span>
-        <span class="group-chevron" data-role="group-icon">${ICON_CHEVRON}</span>
-      </button>
-      <div data-role="group-content" class="group-content">
+      <h2 class="group-title-wrap">
+        <button type="button" class="group-header" data-action="toggle-group"
+          aria-expanded="true" aria-controls="${contentId}">
+          <span class="group-icon-box">
+            ${icon ? `<img src="${escapeAttribute(icon)}" alt="" loading="lazy">` : ""}
+          </span>
+          <span class="group-heading">
+            <span class="group-title">${escapeHtml(displayName)}</span>
+            <span class="group-subtitle">${UI_TEXT.modelCount(models.length)}</span>
+          </span>
+          <span class="group-chevron" data-role="group-icon">${ICON_CHEVRON}</span>
+        </button>
+      </h2>
+      <div id="${contentId}" data-role="group-content" class="group-content">
         <div class="group-inner">
           <div class="model-grid">
             ${models.map((model, cardIndex) => renderModelCard(model, cardIndex, icon, showCopyIcon)).join("")}

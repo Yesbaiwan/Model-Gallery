@@ -56,15 +56,15 @@ describe("渲染字段验证", () => {
 
   test("完整页面按分组规则顺序渲染，而非按数量排序", () => {
     const rules = buildGroupRules([
-      { name: "自定义首", keywords: ["custom"], position: { type: "first" } },
-      { name: "自定义尾", keywords: ["tail"], position: { type: "last" } },
+      { name: "自定义首", keywords: ["custom"], order: 50 },
+      { name: "自定义尾", keywords: ["tail"], order: 4000 },
     ]);
     const html = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-1", "gpt-2", "custom-model", "tail-model"], null, rules);
     assert.ok(html.indexOf("自定义首") < html.indexOf("OpenAI"));
     assert.ok(html.indexOf("自定义尾") > html.indexOf("OpenAI"));
   });
 
-  test("refresh button 包含当前站点精确链接", () => {
+  test("refresh button 指向当前站点", () => {
     const html = renderRefreshButton("测试站点");
     const encoded = encodeURIComponent("测试站点");
     assert.ok(html.includes(`href="/?site=${encoded}"`));
@@ -80,7 +80,7 @@ describe("渲染字段验证", () => {
       Array.from({ length: 8 }, (_, i) => ({
         name: `组${i}`,
         keywords: [`kw${i}`],
-        position: { type: "first" as const },
+        order: i * 10,
       })),
     );
     const html = renderPage(
@@ -96,7 +96,7 @@ describe("渲染字段验证", () => {
   });
 
   test("自定义分组渲染到页面", () => {
-    const customRules = buildGroupRules([{ name: "Safe分组", keywords: ["safe"] }]);
+    const customRules = buildGroupRules([{ name: "Safe分组", keywords: ["safe"], order: 0 }]);
     const html = renderPage(TEST_CONFIG, TEST_SITE, ["safe-model", "gpt-4"], null, customRules);
     assert.ok(html.includes("Safe分组"), "页面应包含自定义分组名");
   });
@@ -204,6 +204,7 @@ describe("安全性验证 - HTML 和属性转义", () => {
         name: `<img src=x onerror=alert(1)>`,
         icon: `https://example.com/icon.png" onerror="alert(1)`,
         keywords: ["unsafe"],
+        order: 0,
       },
     ]);
     const html = renderPage(TEST_CONFIG, TEST_SITE, ["unsafe-model"], null, customRules);
@@ -263,10 +264,10 @@ describe("现代化标记验证", () => {
   });
 
   test("分组折叠头是带 aria-expanded 的原生按钮", () => {
-    assert.ok(
-      pageHtml().includes('<button type="button" class="group-header" data-action="toggle-group" aria-expanded="true"'),
-      "分组头应为按钮并声明展开状态",
-    );
+    assert.ok(pageHtml().includes('<h2 class="group-title-wrap">'), "分组标题应有 heading 语义");
+    assert.ok(pageHtml().includes('class="group-header" data-action="toggle-group"'), "分组头应为原生按钮");
+    assert.ok(pageHtml().includes('aria-expanded="true"'), "分组头应声明展开状态");
+    assert.ok(pageHtml().includes('aria-controls="group-content-0"'), "分组头应关联内容区");
   });
 
   test("模型卡片是带 data-model 的原生按钮", () => {

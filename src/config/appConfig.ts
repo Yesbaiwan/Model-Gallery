@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { AppConfig, CustomGroupRule, GroupPosition, SiteConfig } from "../types.ts";
-import { BUILTIN_GROUP_NAMES } from "./groupConfig.ts";
+import type { AppConfig, CustomGroupRule, SiteConfig } from "../types.ts";
 import { isSafeUrl } from "../ui/escape.ts";
 import { isThemeId, type ThemeId } from "../ui/themes.ts";
+import { buildGroupRules } from "./groupConfig.ts";
 
 const DEFAULT_SITE_CONFIG = {
   apiEndpoint: "/v1/models",
@@ -11,7 +11,6 @@ const DEFAULT_SITE_CONFIG = {
   iconUrl: "https://docs.newapi.pro/assets/logo.png",
 } as const;
 
-const BUILTIN_GROUP_NAME_SET = new Set(BUILTIN_GROUP_NAMES.map((name) => name.toLowerCase()));
 const MAX_ENDPOINT_LENGTH = 200;
 const MAX_NAME_LENGTH = 120;
 const MAX_KEYWORD_LENGTH = 80;
@@ -40,11 +39,27 @@ function parseUrl(value: unknown, label: string): string {
   return url;
 }
 
-function parseEndpoint(value: unknown, label: string): string {
-  const endpoint = (parseString(value, label, false) || DEFAULT_SITE_CONFIG.apiEndpoint).trim();
-  if (endpoint.length > MAX_ENDPOINT_LENGTH || !endpoint.startsWith("/") || endpoint.startsWith("//")) {
-    throw new Error(`配置错误: ${label} 必须是有效的相对路径`);
+/** apiUrl 只允许 https；本地开发允许 http（localhost / 环回地址），避免密钥明文上公网。 */
+const LOCAL_HTTP_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+function parseApiUrl(value: unknown, label: string): string {
+  const url = parseUrl(value, label);
+  const parsed = new URL(url);
+  if (parsed.protocol !== "https:" && !LOCAL_HTTP_HOSTNAMES.has(parsed.hostname)) {
+    throw new Error(`配置错误: ${label} 必须使用 https://（仅 localhost 可用 http://）`);
   }
+  if (parsed.search || parsed.hash) {
+    throw new Error(`配置错误: ${label} 不能包含查询参数或锚点`);
+  }
+  return url;
+}
+
+/** apiEndpoint 会追加在 apiUrl 之后，允许以 / 开头或省略，统一规范为单个前导斜杠。 */
+function parseEndpoint(value: unknown, label: string): string {
+  const raw = (parseString(value, label, false) || DEFAULT_SITE_CONFIG.apiEndpoint).trim();
+  if (raw.length > MAX_ENDPOINT_LENGTH) throw new Error(`配置错误: ${label} 超过长度限制`);
+  const endpoint = `/${raw.replace(/^\/+/, "").replace(/\/+/g, "/")}`;
+  if (endpoint === "/") throw new Error(`配置错误: ${label} 必须是有效的相对路径`);
   try {
     const parsed = new URL(endpoint, "https://model-gallery.invalid");
     if (parsed.origin !== "https://model-gallery.invalid" || parsed.search || parsed.hash) {
@@ -53,7 +68,7 @@ function parseEndpoint(value: unknown, label: string): string {
   } catch {
     throw new Error(`配置错误: ${label} 必须是有效的相对路径`);
   }
-  return endpoint.replace(/\/+/g, "/");
+  return endpoint;
 }
 
 function parseSite(raw: unknown, index: number): SiteConfig {
@@ -63,7 +78,7 @@ function parseSite(raw: unknown, index: number): SiteConfig {
   const label = `站点 "${name}"`;
   return {
     name,
-    apiUrl: parseUrl(raw.apiUrl, `${label} apiUrl`),
+    apiUrl: parseApiUrl(raw.apiUrl, `${label} apiUrl`),
     apiKey: parseString(raw.apiKey, `${label} apiKey`)!,
     apiEndpoint: parseEndpoint(raw.apiEndpoint, `${label} apiEndpoint`),
     externalUrl:
@@ -80,29 +95,17 @@ function ensureKnownKeys(raw: Record<string, unknown>, allowed: readonly string[
   if (unknownKey) throw new Error(`配置错误: ${label} 包含未知字段 "${unknownKey}"`);
 }
 
-function parsePosition(raw: unknown, label: string): GroupPosition | undefined {
-  if (raw === undefined) return undefined;
-  if (!isRecord(raw)) {
-    throw new Error(`配置错误: ${label}.position 必须是对象`);
+function parseOrder(raw: unknown, label: string): number {
+  if (typeof raw !== "number" || !Number.isInteger(raw)) {
+    throw new Error(`配置错误: ${label} 必须是整数且必填`);
   }
-  ensureKnownKeys(raw, ["type", "target"], `${label}.position`);
-  if (!["first", "last", "before"].includes(raw.type as string)) {
-    throw new Error(`配置错误: ${label}.position.type 必须是 "first"、"last" 或 "before"`);
-  }
-  if (raw.type === "before") {
-    const target = parseString(raw.target, `${label}.position.target`)!;
-    return { type: "before", target };
-  }
-  if (raw.target !== undefined) {
-    throw new Error(`配置错误: ${label}.position.target 仅可用于 before`);
-  }
-  return { type: raw.type as GroupPosition["type"] };
+  return raw;
 }
 
 function parseCustomGroupRule(raw: unknown, index: number): CustomGroupRule {
   if (!isRecord(raw)) throw new Error(`配置错误: customGroupRules[${index}] 必须是对象`);
   const label = `customGroupRules[${index}]`;
-  ensureKnownKeys(raw, ["name", "icon", "keywords", "position"], label);
+  ensureKnownKeys(raw, ["name", "icon", "keywords", "order"], label);
   const name = parseString(raw.name, `${label}.name`, true, MAX_NAME_LENGTH)!;
   if (
     !Array.isArray(raw.keywords) ||
@@ -117,7 +120,7 @@ function parseCustomGroupRule(raw: unknown, index: number): CustomGroupRule {
     name,
     keywords: raw.keywords.map((keyword) => keyword.trim()),
     ...(raw.icon === undefined ? {} : { icon: parseUrl(raw.icon, `${label} ("${name}") icon`) }),
-    ...(raw.position === undefined ? {} : { position: parsePosition(raw.position, label) }),
+    order: parseOrder(raw.order, `${label} ("${name}") order`),
   };
 }
 
@@ -148,17 +151,8 @@ function parseConfig(raw: unknown): AppConfig {
           return raw.customGroupRules.map((rule, index) => parseCustomGroupRule(rule, index));
         })();
 
-  const availableGroupNames = new Set([
-    ...BUILTIN_GROUP_NAME_SET,
-    ...(customGroupRules ?? []).map((rule) => rule.name.toLowerCase()),
-  ]);
-  for (const rule of customGroupRules ?? []) {
-    if (rule.position?.type === "before" && !availableGroupNames.has(rule.position.target!.toLowerCase())) {
-      throw new Error(
-        `配置错误: customGroupRules ("${rule.name}") position.target "${rule.position.target}" 不是有效的分组名称`,
-      );
-    }
-  }
+  // 与内置组 order 合并后校验全局唯一，冲突在加载配置时就报错，而不是等请求到来
+  if (customGroupRules?.length) buildGroupRules(customGroupRules);
 
   const themes = parseThemes(raw.themes);
 

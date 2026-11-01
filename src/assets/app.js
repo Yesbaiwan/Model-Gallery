@@ -45,6 +45,9 @@
   let siteSelectorOpen = false;
   let styleSelectorOpen = false;
 
+  // 打开下拉后把焦点送入菜单，键盘用户无需再按 Tab 猜测位置
+  const focusFirstLink = (dropdown) => dropdown.querySelector("a")?.focus();
+
   const toggleSiteSelector = (force) => {
     const button = document.getElementById("siteSelectorBtn");
     const dropdown = document.getElementById("siteSelectorDropdown");
@@ -52,6 +55,7 @@
     siteSelectorOpen = force !== undefined ? force : !siteSelectorOpen;
     dropdown.hidden = !siteSelectorOpen;
     button.setAttribute("aria-expanded", String(siteSelectorOpen));
+    if (siteSelectorOpen) focusFirstLink(dropdown);
   };
 
   const toggleStyleSelector = (force) => {
@@ -61,7 +65,21 @@
     styleSelectorOpen = force !== undefined ? force : !styleSelectorOpen;
     dropdown.hidden = !styleSelectorOpen;
     button.setAttribute("aria-expanded", String(styleSelectorOpen));
+    if (styleSelectorOpen) focusFirstLink(dropdown);
   };
+
+  // Esc 关闭已打开的下拉并把焦点还给触发按钮
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (styleSelectorOpen) {
+      toggleStyleSelector(false);
+      document.getElementById("styleSelectorBtn")?.focus();
+    }
+    if (siteSelectorOpen) {
+      toggleSiteSelector(false);
+      document.getElementById("siteSelectorBtn")?.focus();
+    }
+  });
 
   // 每张卡片独立的还原定时器：连点不同卡片时互不取消
   const copyTimers = new WeakMap();
@@ -112,6 +130,12 @@
     }
     const toast = document.getElementById("notification");
     if (!toast) return;
+    // live region 只在文本变化时播报：先清空再回填，保证重复复制也有反馈
+    const message = toast.dataset.message || toast.textContent;
+    toast.textContent = "";
+    window.requestAnimationFrame(() => {
+      toast.textContent = message;
+    });
     // 连点复制时重置同一条定时器，避免上一次的定时提前把新提示收起
     window.clearTimeout(toastTimer);
     toast.classList.remove("toast-hidden");
@@ -137,9 +161,9 @@
   };
 
   const toggleGroup = (header) => {
-    const section = header.parentElement;
-    const content = section?.querySelector?.('[data-role="group-content"]');
-    const icon = section?.querySelector?.('[data-role="group-icon"]');
+    // 按钮外层是 heading，内容区是同级的兄弟节点，靠 aria-controls 定位
+    const content = document.getElementById(header.getAttribute("aria-controls") || "");
+    const icon = header.querySelector('[data-role="group-icon"]');
     if (!content) return;
     const collapsed = content.classList.toggle("collapsed");
     // 折叠后内容不可聚焦，避免 Tab 键进入看不见的卡片

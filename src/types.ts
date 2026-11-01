@@ -6,6 +6,23 @@ export interface GroupRule {
   keywords?: string[];
 }
 
+/** 内置分组：order 必须显式写在 src/config/builtinGroups.ts 里，不使用数组下标推算。 */
+export interface BuiltinGroupRule extends GroupRule {
+  order: number;
+}
+
+export interface CustomGroupRule {
+  name: string;
+  icon?: string;
+  keywords: string[];
+  /**
+   * 分组排序序号，必填整数，数字越小越靠前。
+   * 全局唯一：与其它内置组或自定义组的 order 重复时启动报错。
+   * 覆盖内置组时填该内置组原本的 order 即可保持原位。
+   */
+  order: number;
+}
+
 export interface SiteConfig {
   name: string;
   apiUrl: string;
@@ -13,18 +30,6 @@ export interface SiteConfig {
   apiEndpoint: string;
   externalUrl: string;
   iconUrl: string;
-}
-
-export interface GroupPosition {
-  type: "first" | "last" | "before";
-  target?: string;
-}
-
-export interface CustomGroupRule {
-  name: string;
-  icon?: string;
-  keywords: string[];
-  position?: GroupPosition;
 }
 
 export interface AppConfig {

@@ -32,35 +32,25 @@
       "name": "翻译",
       "icon": "https://example.com/other.webp",
       "keywords": ["翻译"],
-      "position": {
-        "type": "first"
-      }
+      "order": 50
     },
     {
       "name": "官转",
       "icon": "https://example.com/other.webp",
       "keywords": ["官转"],
-      "position": {
-        "type": "before",
-        "target": "DeepSeek"
-      }
+      "order": 850
     },
     {
       "name": "Nvidia",
       "icon": "https://example.com/nvidia.webp",
       "keywords": ["nvidia", "英伟达"],
-      "position": {
-        "type": "before",
-        "target": "DeepSeek"
-      }
+      "order": 700
     },
     {
       "name": "其他自定义",
       "icon": "https://example.com/other.webp",
       "keywords": ["other"],
-      "position": {
-        "type": "last"
-      }
+      "order": 5000
     }
   ]
 }

@@ -3,131 +3,83 @@ import { BUILTIN_GROUP_NAMES, BUILTIN_GROUP_RULES, DEFAULT_ICON } from "./builti
 
 export { BUILTIN_GROUP_NAMES };
 
-type RulePosition = "first" | "last" | "before" | "base";
-interface RuleNode {
-  key: string;
-  rule: GroupRule;
-  position: RulePosition;
-  target?: string;
-  configOrder: number;
-  baseOrder: number;
-}
-
 function keyOf(name: string): string {
   return name.toLowerCase();
 }
 
-function addEdge(edges: Map<string, Set<string>>, from: string, to: string): void {
-  if (from === to) throw new Error(`分组位置形成循环: ${from}`);
-  edges.get(from)!.add(to);
-}
+/**
+ * 合并内置组与自定义组并按 order 升序排列。
+ *
+ * 判定规则：
+ * - 同名自定义规则覆盖内置组（或此前同名的自定义规则），以最后一条为准。
+ * - order 必填且全局唯一，且必须小于 default 的 order，保证 default 始终在最后。
+ *   覆盖内置组时写该内置组原本的 order 不算冲突（被覆盖的内置组已从集合中移除）。
+ * - icon：填了就用填的；覆盖内置组未填时沿用内置图标；全新分组未填时用 DEFAULT_ICON。
+ */
+export function buildGroupRules(customRules: readonly CustomGroupRule[] = []): GroupRule[] {
+  const lastIndexByKey = new Map<string, number>();
+  customRules.forEach((rule, index) => lastIndexByKey.set(keyOf(rule.name), index));
 
-function createEffectiveNodes(customRules: CustomGroupRule[]): {
-  nodes: Map<string, RuleNode>;
-  customNodes: RuleNode[];
-} {
-  const customByKey = new Map<string, { rule: CustomGroupRule; order: number }>();
-  customRules.forEach((rule, order) => {
-    const key = keyOf(rule.name);
-    customByKey.delete(key);
-    customByKey.set(key, { rule, order });
-  });
-
-  const nodes = new Map<string, RuleNode>();
-  BUILTIN_GROUP_RULES.forEach((rule, baseOrder) => {
-    const key = keyOf(rule.name);
-    if (customByKey.has(key)) return;
-    nodes.set(key, { key, rule, position: "base", configOrder: -1, baseOrder });
-  });
-
-  const customNodes: RuleNode[] = [];
-  for (const [key, { rule: custom, order }] of customByKey) {
-    const node: RuleNode = {
-      key,
-      rule: { name: custom.name, icon: custom.icon || DEFAULT_ICON, keywords: custom.keywords },
-      position: custom.position?.type ?? "first",
-      target: custom.position?.target,
-      configOrder: order,
-      baseOrder: Number.MAX_SAFE_INTEGER,
-    };
-    nodes.set(key, node);
-    customNodes.push(node);
-  }
-  return { nodes, customNodes };
-}
-
-function stableOrder(nodes: Map<string, RuleNode>, customNodes: RuleNode[]): GroupRule[] {
-  const edges = new Map<string, Set<string>>([...nodes.keys()].map((key) => [key, new Set<string>()]));
-  const indegree = new Map<string, number>([...nodes.keys()].map((key) => [key, 0]));
-  const customByPosition = (position: RulePosition) =>
-    customNodes.filter((node) => node.position === position).sort((a, b) => a.configOrder - b.configOrder);
-  const first = customByPosition("first");
-  const before = customByPosition("before");
-  const last = customByPosition("last");
-  const base = [...nodes.values()].filter((node) => node.position === "base").sort((a, b) => a.baseOrder - b.baseOrder);
-
-  const connect = (from: string, to: string) => {
-    if (edges.get(from)!.has(to)) return;
-    addEdge(edges, from, to);
-    indegree.set(to, indegree.get(to)! + 1);
-  };
-
-  for (let i = 1; i < base.length; i++) connect(base[i - 1].key, base[i].key);
-  for (let i = 1; i < first.length; i++) connect(first[i - 1].key, first[i].key);
-  for (let i = 1; i < last.length; i++) connect(last[i - 1].key, last[i].key);
-
-  for (const firstNode of first)
-    for (const other of nodes.values())
-      if (other.key !== firstNode.key && other.position !== "first") connect(firstNode.key, other.key);
-  for (const lastNode of last)
-    for (const other of nodes.values())
-      if (other.key !== lastNode.key && other.position !== "last") connect(other.key, lastNode.key);
-
-  const beforeByTarget = new Map<string, RuleNode[]>();
-  for (const node of before) {
-    const targetKey = keyOf(node.target!);
-    if (!nodes.has(targetKey)) throw new Error(`无效的分组插入目标: ${node.target}`);
-    const sameTarget = beforeByTarget.get(targetKey) ?? [];
-    if (sameTarget.length) connect(sameTarget[sameTarget.length - 1].key, node.key);
-    sameTarget.push(node);
-    beforeByTarget.set(targetKey, sameTarget);
-    connect(node.key, targetKey);
+  const entries: Array<{ rule: GroupRule; order: number }> = [];
+  for (const builtin of BUILTIN_GROUP_RULES) {
+    if (lastIndexByKey.has(keyOf(builtin.name))) continue;
+    entries.push({
+      rule: { name: builtin.name, icon: builtin.icon, keywords: builtin.keywords },
+      order: builtin.order,
+    });
   }
 
-  const rank = (node: RuleNode): number => {
-    if (node.position === "first") return -1_000_000 + node.configOrder;
-    if (node.position === "last") return 1_000_000 + node.configOrder;
-    if (node.position === "base") return node.baseOrder * 1000;
-    const target = nodes.get(keyOf(node.target!));
-    return target ? rank(target) - 1 : 0;
-  };
+  customRules.forEach((custom, index) => {
+    const key = keyOf(custom.name);
+    if (lastIndexByKey.get(key) !== index) return;
+    const builtin = BUILTIN_GROUP_RULES.find((rule) => keyOf(rule.name) === key);
+    entries.push({
+      rule: {
+        name: custom.name,
+        icon: custom.icon ?? builtin?.icon ?? DEFAULT_ICON,
+        keywords: custom.keywords,
+      },
+      order: custom.order,
+    });
+  });
 
-  const orderedKeys: string[] = [];
-  const available = [...nodes.values()].filter((node) => indegree.get(node.key) === 0);
-  while (available.length) {
-    available.sort((a, b) => rank(a) - rank(b) || a.configOrder - b.configOrder || a.baseOrder - b.baseOrder);
-    const node = available.shift()!;
-    orderedKeys.push(node.key);
-    for (const next of edges.get(node.key)!) {
-      const nextDegree = indegree.get(next)! - 1;
-      indegree.set(next, nextDegree);
-      if (nextDegree === 0) available.push(nodes.get(next)!);
+  const defaultOrder = entries.find((entry) => keyOf(entry.rule.name) === "default")?.order ?? Infinity;
+  const seenOrders = new Map<number, string>();
+  for (const { rule, order } of entries) {
+    if (keyOf(rule.name) !== "default" && order >= defaultOrder) {
+      throw new Error(`配置错误: 分组 order ${order} 必须小于 default 的 ${defaultOrder}（"${rule.name}"）`);
     }
+    const previous = seenOrders.get(order);
+    if (previous !== undefined) {
+      throw new Error(
+        `配置错误: 分组 order ${order} 重复（"${previous}" 与 "${rule.name}"），每个分组必须使用不同的 order`,
+      );
+    }
+    seenOrders.set(order, rule.name);
   }
-  if (orderedKeys.length !== nodes.size) throw new Error("分组位置形成循环，请检查 before 配置");
-  return orderedKeys.map((key) => nodes.get(key)!.rule);
-}
 
-export function buildGroupRules(customRules?: CustomGroupRule[]): GroupRule[] {
-  if (!customRules?.length) return [...BUILTIN_GROUP_RULES];
-  const { nodes, customNodes } = createEffectiveNodes(customRules);
-  return stableOrder(nodes, customNodes);
+  return entries.sort((a, b) => a.order - b.order).map((entry) => entry.rule);
 }
 
 export function getGroupDisplayName(groupName: string, rules: readonly GroupRule[] = BUILTIN_GROUP_RULES): string {
   return rules.find((rule) => keyOf(rule.name) === keyOf(groupName))?.name ?? groupName;
 }
 
+const TOKEN_CHAR = /[a-z0-9]/;
+
+/** 关键词只需在“词首”出现即命中：`ling` 不会命中 `kling`，`wan` 能命中 `wanx2.1`；中文关键词不受限制。 */
+function matchesKeyword(model: string, keyword: string): boolean {
+  if (!TOKEN_CHAR.test(keyword[0])) return model.includes(keyword);
+  let index = model.indexOf(keyword);
+  while (index !== -1) {
+    const before = model[index - 1];
+    if (before === undefined || !TOKEN_CHAR.test(before)) return true;
+    index = model.indexOf(keyword, index + 1);
+  }
+  return false;
+}
+
+/** 按 order 从小到大逐条匹配关键词，首个命中生效，未命中归入 default。 */
 export function groupModels(models: string[], rules: readonly GroupRule[]): Map<string, string[]> {
   const groups = new Map<string, string[]>();
   const defaultName = rules.find((rule) => keyOf(rule.name) === "default")?.name ?? "default";
@@ -137,7 +89,9 @@ export function groupModels(models: string[], rules: readonly GroupRule[]): Map<
     .map((rule) => ({ name: rule.name, keywords: rule.keywords?.map((keyword) => keyword.toLowerCase()) ?? [] }));
   for (const model of models) {
     const modelLower = model.toLowerCase();
-    const matchingRule = matchers.find((matcher) => matcher.keywords.some((keyword) => modelLower.includes(keyword)));
+    const matchingRule = matchers.find((matcher) =>
+      matcher.keywords.some((keyword) => matchesKeyword(modelLower, keyword)),
+    );
     const groupName = matchingRule?.name ?? defaultName;
     const group = groups.get(groupName) ?? [];
     group.push(model);
