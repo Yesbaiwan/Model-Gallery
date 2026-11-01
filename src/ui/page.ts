@@ -58,7 +58,7 @@ export function renderPage(
 </head>
 <body>
   ${renderSiteSelector(appConfig, site.name)}
-  ${renderStyleSelector(styleId, resolveEnabledThemes(appConfig.themes))}
+  ${renderStyleSelector(styleId, resolveEnabledThemes(appConfig.themes), site.name)}
   ${renderColorModeToggle()}
   ${renderRefreshButton(site.name)}
   <div class="shell">

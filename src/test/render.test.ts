@@ -75,6 +75,26 @@ describe("渲染字段验证", () => {
     assert.ok(html.includes('href="/"'), "无站点名时应链接到根路径");
   });
 
+  test("分组入场序号封顶，分组再多也不会线性增加延迟", () => {
+    const rules = buildGroupRules(
+      Array.from({ length: 8 }, (_, i) => ({
+        name: `组${i}`,
+        keywords: [`kw${i}`],
+        position: { type: "first" as const },
+      })),
+    );
+    const html = renderPage(
+      TEST_CONFIG,
+      TEST_SITE,
+      Array.from({ length: 8 }, (_, i) => `kw${i}`),
+      null,
+      rules,
+    );
+    assert.ok(html.includes("--gi:6"), "序号应封顶到 6");
+    assert.ok(!html.includes("--gi:7"), "序号 7 不应出现");
+    assert.ok(!html.includes("--gi:8"), "序号 8 不应出现");
+  });
+
   test("自定义分组渲染到页面", () => {
     const customRules = buildGroupRules([{ name: "Safe分组", keywords: ["safe"] }]);
     const html = renderPage(TEST_CONFIG, TEST_SITE, ["safe-model", "gpt-4"], null, customRules);
@@ -95,6 +115,11 @@ describe("渲染字段验证", () => {
   test("模型名渲染到卡片", () => {
     const html = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4-turbo"], null, DEFAULT_RULES);
     assert.ok(html.includes("gpt-4-turbo"), "页面应包含模型名");
+  });
+
+  test("未命中任何规则的模型归入兜底分组，标题显示为“其他”", () => {
+    const html = renderPage(TEST_CONFIG, TEST_SITE, ["unmatched-model"], null, DEFAULT_RULES);
+    assert.ok(html.includes('<span class="group-title">其他</span>'), "兜底分组标题应为“其他”");
   });
 });
 
@@ -270,15 +295,15 @@ describe("多主题验证", () => {
 
   test("页面内联所选主题的样式而非其他主题", () => {
     const classic = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4"], null, DEFAULT_RULES, "classic");
-    assert.ok(classic.includes("Classic 经典主题层"), "应内联 classic 皮肤");
-    assert.ok(classic.includes("fadeInUp"), "classic 动效随主题文件一并内联");
-    assert.ok(!classic.includes("Hand-Drawn 手绘主题层"), "不应内联手绘皮肤");
-    assert.ok(!classic.includes("拍墙"), "classic 不应包含共享拍纸动效");
+    assert.ok(classic.includes("@keyframes fadeInUp"), "应内联 classic 皮肤的入场动效");
+    assert.ok(classic.includes("--accent-glow"), "应内联 classic 皮肤 token");
+    assert.ok(!classic.includes("--wobbly-md"), "不应内联手绘皮肤 token");
+    assert.ok(!classic.includes("@keyframes slap-in"), "classic 不应包含共享拍纸动效");
     const handdrawn = renderPage(TEST_CONFIG, TEST_SITE, ["gpt-4"], null, DEFAULT_RULES, "handdrawn");
-    assert.ok(handdrawn.includes("Hand-Drawn 手绘主题层"), "应内联手绘皮肤");
-    assert.ok(handdrawn.includes("动效层"), "手绘包含共享动效层");
+    assert.ok(handdrawn.includes("--wobbly-md"), "应内联手绘皮肤 token");
+    assert.ok(handdrawn.includes("@keyframes slap-in"), "手绘包含共享动效层");
     for (const html of [classic, handdrawn]) {
-      assert.ok(html.includes("基础结构层"), "必须包含 base 结构层");
+      assert.ok(html.includes("--grid-min-width"), "必须包含 base 结构层");
     }
   });
 
@@ -311,5 +336,11 @@ describe("多主题验证", () => {
     const selector = renderStyleSelector("handdrawn", enabled);
     assert.ok(selector.includes('href="/?theme=classic"'), "应包含启用的 classic");
     assert.ok(!selector.includes('href="/?theme=archive"'), "不应包含未启用的 archive");
+  });
+
+  test("切换主题链接保留当前站点", () => {
+    const selector = renderStyleSelector("classic", THEMES, "测试站点");
+    const href = `/?site=${encodeURIComponent("测试站点")}&amp;theme=archive`;
+    assert.ok(selector.includes(`href="${href}"`), "主题链接应携带当前站点参数");
   });
 });

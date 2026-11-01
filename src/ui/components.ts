@@ -16,6 +16,8 @@ import { themeName, type ThemeDefinition, type ThemeId } from "./themes.ts";
 
 /** 参与错落入场动画的卡片序号上限，超出后延迟封顶，避免长列表末尾等待。 */
 const ANIMATED_CARD_LIMIT = 8;
+/** 参与分组级联延迟的组序号上限，分组再多也不会让末尾分组迟迟不出场。 */
+const ANIMATED_GROUP_LIMIT = 6;
 
 export function renderColorModeToggle(): string {
   return `
@@ -33,7 +35,7 @@ export function renderSiteSelector(appConfig: AppConfig, currentSiteName: string
   return `
     <div class="site-selector">
       <button id="siteSelectorBtn" type="button" data-action="toggle-site-selector"
-        class="site-selector-btn" aria-label="${UI_TEXT.siteSelectorLabel}" aria-haspopup="listbox"
+        class="site-selector-btn" aria-label="${UI_TEXT.siteSelectorLabel}"
         aria-controls="siteSelectorDropdown" aria-expanded="false">
         ${ICON_MENU}
       </button>
@@ -55,14 +57,20 @@ export function renderRefreshButton(currentSiteName: string): string {
   return `<a href="${escapeAttribute(href)}" class="icon-btn refresh-btn" aria-label="${UI_TEXT.refreshLabel}" title="${UI_TEXT.refreshLabel}">${ICON_REFRESH}</a>`;
 }
 
-export function renderStyleSelector(currentStyle: ThemeId, enabled: readonly ThemeDefinition[]): string {
+export function renderStyleSelector(
+  currentStyle: ThemeId,
+  enabled: readonly ThemeDefinition[],
+  currentSiteName = "",
+): string {
   // 仅启用一个主题时不渲染切换按钮
   if (enabled.length <= 1) return "";
   const otherStyles = enabled.filter((theme) => theme.id !== currentStyle);
+  // 保留当前站点，避免在非默认站点上切换主题后被弹回默认站点
+  const siteQuery = currentSiteName ? `site=${encodeURIComponent(currentSiteName)}&` : "";
   return `
     <div class="style-selector">
       <button id="styleSelectorBtn" type="button" data-action="toggle-style-selector"
-        class="style-toggle-btn" aria-label="${UI_TEXT.styleSelectorLabel}" aria-haspopup="listbox"
+        class="style-toggle-btn" aria-label="${UI_TEXT.styleSelectorLabel}"
         aria-controls="styleSelectorDropdown" aria-expanded="false">
         ${ICON_PALETTE}
       </button>
@@ -70,7 +78,7 @@ export function renderStyleSelector(currentStyle: ThemeId, enabled: readonly The
         ${otherStyles
           .map(
             (theme) => `
-          <a class="style-selector-link" href="/?theme=${theme.id}">
+          <a class="style-selector-link" href="${escapeAttribute(`/?${siteQuery}theme=${theme.id}`)}">
             ${escapeHtml(themeName(theme.id))}
           </a>`,
           )
@@ -125,10 +133,11 @@ export function renderGroupSection(
   index: number,
   showCopyIcon: boolean,
 ): string {
-  const displayName = getGroupDisplayName(group.name, rules);
+  const displayName =
+    group.name.toLowerCase() === "default" ? UI_TEXT.defaultGroupName : getGroupDisplayName(group.name, rules);
   const icon = sanitizeUrl(group.icon, "");
   return `
-    <section class="group" style="--gi:${index}">
+    <section class="group" style="--gi:${Math.min(index, ANIMATED_GROUP_LIMIT)}">
       <button type="button" class="group-header" data-action="toggle-group" aria-expanded="true">
         <span class="group-icon-box">
           ${icon ? `<img src="${escapeAttribute(icon)}" alt="" loading="lazy">` : ""}

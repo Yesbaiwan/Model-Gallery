@@ -15,6 +15,7 @@ export const UI_TEXT = {
   refreshLabel: "刷新",
   copiedToClipboard: "已复制到剪贴板",
   groupCountLabel: "分组",
+  defaultGroupName: "其他",
   modelCountLabel: "模型",
   modelCount: (count: number) => `${count} 个模型`,
   copyModel: (model: string) => `复制 ${model}`,

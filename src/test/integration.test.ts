@@ -84,6 +84,7 @@ describe("集成测试：启动服务器后检测", () => {
     contentType: string | null;
     cacheControl: string | null;
     vary: string | null;
+    referrerPolicy: string | null;
     setCookie: string[];
   }> {
     return new Promise((resolve, reject) => {
@@ -100,6 +101,7 @@ describe("集成测试：启动服务器后检测", () => {
             contentType: res.headers["content-type"] || null,
             cacheControl: res.headers["cache-control"] || null,
             vary: res.headers.vary || null,
+            referrerPolicy: res.headers["referrer-policy"]?.toString() ?? null,
             setCookie: res.headers["set-cookie"] ?? [],
           });
         });
@@ -179,13 +181,26 @@ describe("集成测试：启动服务器后检测", () => {
 
     const unthemed = await fetchText("/");
     assert.ok(unthemed.text.includes('data-style="classic"'), "无 cookie 时使用启用列表第一个主题");
-    assert.ok(unthemed.text.includes('href="/?theme=handdrawn"'), "切换下拉只列启用主题");
-    assert.ok(!unthemed.text.includes('href="/?theme=archive"'), "未启用主题不应出现在下拉中");
+    const themeHref = `href="/?site=${encodeURIComponent("测试站点A")}&amp;theme=handdrawn"`;
+    assert.ok(unthemed.text.includes(themeHref), "切换下拉只列启用主题");
+    assert.ok(!unthemed.text.includes("theme=archive"), "未启用主题不应出现在下拉中");
   });
 
   test("启用列表内的 theme 参数正常切换", async () => {
     const { text } = await fetchText("/?theme=handdrawn");
     assert.ok(text.includes('data-style="handdrawn"'), "启用列表内的主题可通过 URL 切换");
+  });
+
+  test("在非默认站点切换主题后仍停留该站点", async () => {
+    const siteB = encodeURIComponent("测试站点B");
+    const { text } = await fetchText(`/?site=${siteB}&theme=classic`);
+    assert.ok(text.includes("gemini-pro"), "应渲染站点 B 的模型");
+    assert.ok(text.includes(`href="/?site=${siteB}&amp;theme=handdrawn"`), "主题切换链接应保留站点参数");
+  });
+
+  test("HTML 响应附带 no-referrer 参考策略", async () => {
+    const { referrerPolicy } = await fetchText("/");
+    assert.equal(referrerPolicy, "no-referrer");
   });
 
   test("非法 theme 参数回退默认主题且不下发 cookie", async () => {

@@ -26,6 +26,7 @@ class FakeElement {
   classList = new FakeClassList();
   innerHTML = "";
   hidden = false;
+  inert = false;
   dataset: Record<string, string> = {};
   parentElement: FakeElement | null = null;
   children = new Map<string, FakeElement>();
@@ -298,8 +299,12 @@ describe("浏览器交互脚本", () => {
 
     click({ target: groupHeader });
     assert.equal(content.classList.has("collapsed"), true);
+    assert.equal(content.inert, true, "折叠后内容应设为 inert，键盘无法进入");
     assert.equal(icon.classList.has("icon-rotated"), true);
     assert.equal(groupHeader.getAttribute("aria-expanded"), "false");
+    click({ target: groupHeader });
+    assert.equal(content.classList.has("collapsed"), false);
+    assert.equal(content.inert, false, "展开后应解除 inert");
 
     selector.dataset.action = "toggle-site-selector";
     selector.closest = () => selector;

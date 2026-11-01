@@ -65,6 +65,7 @@
 
   // 每张卡片独立的还原定时器：连点不同卡片时互不取消
   const copyTimers = new WeakMap();
+  let toastTimer = 0;
 
   // 非安全上下文（如局域网 HTTP）没有 navigator.clipboard，回退到 execCommand。
   // 采用 clipboard.js 的成熟方案：只做范围选中、不 focus（聚焦会触发 iOS 平移页面导致跳动），
@@ -111,9 +112,11 @@
     }
     const toast = document.getElementById("notification");
     if (!toast) return;
+    // 连点复制时重置同一条定时器，避免上一次的定时提前把新提示收起
+    window.clearTimeout(toastTimer);
     toast.classList.remove("toast-hidden");
     toast.classList.add("toast-visible");
-    window.setTimeout(() => {
+    toastTimer = window.setTimeout(() => {
       toast.classList.remove("toast-visible");
       toast.classList.add("toast-hidden");
     }, TOAST_DURATION_MS);
@@ -139,6 +142,8 @@
     const icon = section?.querySelector?.('[data-role="group-icon"]');
     if (!content) return;
     const collapsed = content.classList.toggle("collapsed");
+    // 折叠后内容不可聚焦，避免 Tab 键进入看不见的卡片
+    content.inert = collapsed;
     header.setAttribute("aria-expanded", String(!collapsed));
     icon?.classList.toggle("icon-rotated", collapsed);
   };
