@@ -1,7 +1,5 @@
 import type { CustomGroupRule, GroupRule } from "../types.ts";
-import { BUILTIN_GROUP_NAMES, BUILTIN_GROUP_RULES, DEFAULT_ICON } from "./builtinGroups.ts";
-
-export { BUILTIN_GROUP_NAMES };
+import { BUILTIN_GROUP_RULES, DEFAULT_ICON } from "./builtinGroups.ts";
 
 function keyOf(name: string): string {
   return name.toLowerCase();

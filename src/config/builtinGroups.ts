@@ -199,5 +199,3 @@ export const BUILTIN_GROUP_RULES: readonly BuiltinGroupRule[] = [
   },
   { name: "default", order: 9000, icon: DEFAULT_ICON },
 ];
-
-export const BUILTIN_GROUP_NAMES = BUILTIN_GROUP_RULES.map((rule) => rule.name);
