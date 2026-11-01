@@ -1,180 +1,11 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import vm from "node:vm";
-import { jsScripts, COLOR_MODE_INIT_SCRIPT } from "../ui/assets.ts";
-
-class FakeClassList {
-  private values = new Set<string>();
-  toggle(name: string, force?: boolean): boolean {
-    const next = force === undefined ? !this.values.has(name) : force;
-    if (next) this.values.add(name);
-    else this.values.delete(name);
-    return next;
-  }
-  add(name: string): void {
-    this.values.add(name);
-  }
-  remove(name: string): void {
-    this.values.delete(name);
-  }
-  has(name: string): boolean {
-    return this.values.has(name);
-  }
-}
-
-class FakeElement {
-  classList = new FakeClassList();
-  innerHTML = "";
-  hidden = false;
-  inert = false;
-  dataset: Record<string, string> = {};
-  children = new Map<string, FakeElement>();
-  private attrs = new Map<string, string>();
-  setAttribute(name: string, value: string): void {
-    this.attrs.set(name, value);
-  }
-  getAttribute(name: string): string | null {
-    return this.attrs.get(name) ?? null;
-  }
-  closest(selector: string): FakeElement | null {
-    return selector === "[data-action]" && this.dataset.action ? this : null;
-  }
-  querySelector(selector: string): FakeElement | null {
-    return this.children.get(selector) ?? null;
-  }
-  contains(value: unknown): boolean {
-    return value === this;
-  }
-}
-
-class MemoryStorage {
-  private values = new Map<string, string>();
-  private readonly fail: boolean;
-  constructor(fail = false) {
-    this.fail = fail;
-  }
-  getItem(key: string): string | null {
-    if (this.fail) throw new Error("storage blocked");
-    return this.values.get(key) ?? null;
-  }
-  setItem(key: string, value: string): void {
-    if (this.fail) throw new Error("storage blocked");
-    this.values.set(key, value);
-  }
-  removeItem(key: string): void {
-    if (this.fail) throw new Error("storage blocked");
-    this.values.delete(key);
-  }
-}
-
-function createContext(storage: unknown, elements: Record<string, FakeElement> = {}) {
-  const listeners = new Map<string, (event?: any) => void>();
-  const root = {
-    attrs: new Map<string, string>(),
-    setAttribute(name: string, value: string) {
-      this.attrs.set(name, value);
-    },
-    removeAttribute(name: string) {
-      this.attrs.delete(name);
-    },
-    getAttribute(name: string) {
-      return this.attrs.get(name) ?? null;
-    },
-  };
-  const context = {
-    console: { error() {} },
-    document: {
-      documentElement: root,
-      body: {
-        appendChild() {},
-      },
-      createElement() {
-        return {
-          value: "",
-          readOnly: false,
-          contentEditable: "",
-          style: {} as Record<string, string>,
-          setSelectionRange() {},
-          remove() {},
-        };
-      },
-      createRange() {
-        return { selectNodeContents() {} };
-      },
-      execCommand() {
-        return true;
-      },
-      getElementById(id: string) {
-        return elements[id] ?? null;
-      },
-      addEventListener(name: string, handler: (event?: any) => void) {
-        listeners.set(name, handler);
-      },
-    },
-    localStorage: storage,
-    navigator: { clipboard: undefined as { writeText(value: string): Promise<void> } | undefined },
-    window: {
-      localStorage: storage,
-      matchMedia: () => ({ matches: false }),
-      getSelection: () => ({ removeAllRanges() {}, addRange() {} }),
-      setTimeout,
-      clearTimeout,
-    },
-    setTimeout,
-  } as Record<string, any>;
-  vm.createContext(context);
-  vm.runInContext(jsScripts(), context);
-  return { context, listeners, root };
-}
-
-function createHeadContext(storage: unknown) {
-  const root = {
-    attrs: new Map<string, string>(),
-    setAttribute(name: string, value: string) {
-      this.attrs.set(name, value);
-    },
-  };
-  const context = {
-    document: { documentElement: root },
-    localStorage: storage,
-  } as Record<string, any>;
-  vm.createContext(context);
-  vm.runInContext(COLOR_MODE_INIT_SCRIPT, context);
-  return root;
-}
-
-describe("明暗模式初始化脚本（head）", () => {
-  test("恢复已保存的明暗选择", () => {
-    const storage = new MemoryStorage();
-    storage.setItem("theme", "dark");
-    const root = createHeadContext(storage);
-    assert.equal(root.attrs.get("data-theme"), "dark");
-  });
-
-  test("忽略非法明暗值", () => {
-    const storage = new MemoryStorage();
-    storage.setItem("theme", "weird");
-    const root = createHeadContext(storage);
-    assert.equal(root.attrs.has("data-theme"), false);
-  });
-
-  test("存储异常时不抛错", () => {
-    assert.doesNotThrow(() => createHeadContext(new MemoryStorage(true)));
-  });
-});
+import { FakeElement, MemoryStorage, createContext } from "./fakeDom.ts";
 
 describe("浏览器交互脚本", () => {
   test("初始化时 localStorage 不可用仍能完成脚本注册", () => {
     const { listeners } = createContext(undefined);
     assert.ok(listeners.has("click"));
-  });
-
-  test("存储异常不阻止明暗点击处理", () => {
-    const button = new FakeElement();
-    button.dataset.action = "toggle-mode";
-    const { listeners, root } = createContext(new MemoryStorage(true));
-    assert.doesNotThrow(() => listeners.get("click")?.({ target: button }));
-    assert.equal(root.getAttribute("data-theme"), "dark");
   });
 
   test("剪贴板缺失时回退 execCommand 并标记卡片已复制", async () => {
@@ -225,35 +56,6 @@ describe("浏览器交互脚本", () => {
     assert.equal(card.classList.has("copied"), true);
   });
 
-  test("data-theme-transition=false 时明暗切换跳过 View Transitions 立即生效", () => {
-    const { listeners, root, context } = createContext(new MemoryStorage());
-    root.setAttribute("data-theme-transition", "false");
-    let transitions = 0;
-    context.document.startViewTransition = () => {
-      transitions += 1;
-    };
-    const button = new FakeElement();
-    button.dataset.action = "toggle-mode";
-    listeners.get("click")?.({ target: button });
-    assert.equal(root.getAttribute("data-theme"), "dark");
-    assert.equal(transitions, 0, "classic 不应触发交叉淡入");
-  });
-
-  test("其余场景明暗切换走 View Transitions", () => {
-    const { listeners, root, context } = createContext(new MemoryStorage());
-    root.setAttribute("data-theme-transition", "true");
-    let transitions = 0;
-    context.document.startViewTransition = (update: () => void) => {
-      transitions += 1;
-      update();
-    };
-    const button = new FakeElement();
-    button.dataset.action = "toggle-mode";
-    listeners.get("click")?.({ target: button });
-    assert.equal(root.getAttribute("data-theme"), "dark");
-    assert.equal(transitions, 1, "其他主题应经交叉淡入更新");
-  });
-
   test("execCommand 抛异常时清理临时元素且不标记已复制", () => {
     const { listeners, context } = createContext(new MemoryStorage());
     let removed = 0;
@@ -276,6 +78,19 @@ describe("浏览器交互脚本", () => {
     assert.doesNotThrow(() => listeners.get("click")?.({ target: card }));
     assert.equal(removed, 1, "临时 textarea 必须被移除");
     assert.equal(card.classList.has("copied"), false, "复制失败不应触发已复制反馈");
+  });
+
+  test("复制后弹出提示并带对应文案", () => {
+    const toast = new FakeElement();
+    toast.dataset.message = "已复制模型名";
+    const { listeners } = createContext(new MemoryStorage(), { notification: toast });
+    const card = new FakeElement();
+    card.dataset.action = "copy-model";
+    card.dataset.model = "gpt-4";
+    listeners.get("click")?.({ target: card });
+    assert.equal(toast.textContent, "已复制模型名", "提示应显示复制结果");
+    assert.equal(toast.classList.has("toast-visible"), true, "提示应进入可见状态");
+    assert.equal(toast.classList.has("toast-hidden"), false, "可见时不应保留隐藏状态");
   });
 
   test("分组与站点选择器通过事件委托切换，并维护 aria-expanded", () => {

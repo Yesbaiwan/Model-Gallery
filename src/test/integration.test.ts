@@ -146,6 +146,17 @@ describe("集成测试：启动服务器后检测", () => {
     assert.ok(empty.text.includes("gpt-4"), "应渲染默认站点的模型");
   });
 
+  test("站点名大小写不敏感，不存在的站点返回 404", async () => {
+    const lowerCase = await fetchText(`/?site=${encodeURIComponent("测试站点a")}`);
+    assert.equal(lowerCase.status, 200, "站点名大小写不影响匹配");
+    assert.ok(lowerCase.text.includes("gpt-4"), "应渲染站点 A 的模型");
+
+    const unknown = await fetchText(`/?site=${encodeURIComponent("不存在的站点")}`);
+    assert.equal(unknown.status, 404, "拼错的站点名应返回 404");
+    assert.ok(unknown.text.includes("站点不存在"), "应提示站点不存在而非渲染默认站点");
+    assert.ok(!unknown.text.includes("gpt-4"), "不应回落到默认站点的模型");
+  });
+
   test("刷新链接指向当前站点", async () => {
     const home = await fetchText("/");
     const encoded = encodeURIComponent("测试站点A");

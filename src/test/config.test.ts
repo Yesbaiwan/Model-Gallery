@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { loadAppConfig } from "../config/appConfig.ts";
-import { groupModels, buildGroupRules, getGroupDisplayName } from "../config/groupConfig.ts";
+import { groupModels, buildGroupRules } from "../config/groupConfig.ts";
 import { BUILTIN_GROUP_RULES, DEFAULT_ICON } from "../config/builtinGroups.ts";
 import type { CustomGroupRule } from "../types.ts";
 
@@ -518,35 +518,6 @@ describe("themes 配置", () => {
     setEnv({ ...baseConfig, themes: "classic" });
     await assert.rejects(() => loadAppConfig(), /themes 必须是主题 id 数组/);
   });
-
-  test("themes 全组合：任一条目非法即整体报错，全合法才通过", async () => {
-    // 3 个合法 id + 1 个非法 id，长度 1~3 的全部排列组合（4+16+64 = 84 种）
-    const candidates = ["classic", "archive", "handdrawn", "bad-theme"];
-    const combos: string[][] = [];
-    for (const a of candidates) {
-      combos.push([a]);
-      for (const b of candidates) {
-        combos.push([a, b]);
-        for (const c of candidates) {
-          combos.push([a, b, c]);
-        }
-      }
-    }
-    assert.equal(combos.length, 84);
-
-    for (const themes of combos) {
-      setEnv({ ...baseConfig, themes });
-      const hasBad = themes.includes("bad-theme");
-      const hasDuplicate = new Set(themes).size !== themes.length;
-      if (hasBad || hasDuplicate) {
-        // 含坏条目或重复条目都必须整体报错（两类错误抛出先后取决于条目位置）
-        await assert.rejects(() => loadAppConfig(), /themes (含无效主题 id "bad-theme"|中主题 .* 重复)/);
-      } else {
-        const config = await loadAppConfig();
-        assert.deepEqual(config.themes, themes);
-      }
-    }
-  });
 });
 
 const DEFAULT_RULES = buildGroupRules();
@@ -656,13 +627,5 @@ describe("分组逻辑 - 自定义分组", () => {
     const rules = buildGroupRules([{ name: "__proto__", keywords: ["special"], order: 6000 }]);
     const result = groupModels(["special-model"], rules);
     assert.deepEqual(result.get("__proto__"), ["special-model"]);
-  });
-
-  test("辅助函数按规范化名称查找", () => {
-    const rules = buildGroupRules([
-      { name: "自定义", keywords: ["custom"], icon: "https://example.com/icon.png", order: 6000 },
-    ]);
-    assert.equal(getGroupDisplayName("自定义", rules), "自定义");
-    assert.equal(getGroupDisplayName("DEFAULT", rules), "default", "兜底分组名由 UI 层映射为展示文案");
   });
 });

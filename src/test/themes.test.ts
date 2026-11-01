@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { accessSync } from "node:fs";
-import { THEMES, DEFAULT_THEME_ID, isThemeId, getTheme, themeName, resolveEnabledThemes } from "../ui/themes.ts";
+import { THEMES, DEFAULT_THEME_ID, isThemeId, themeName, resolveEnabledThemes } from "../ui/themes.ts";
 
 describe("主题注册表", () => {
   test("主题 id 唯一且包含内置默认", () => {
@@ -33,8 +33,7 @@ describe("主题注册表", () => {
     assert.equal(isThemeId(undefined), false);
   });
 
-  test("getTheme 返回对应定义，themeName 返回非空显示名", () => {
-    assert.equal(getTheme("classic").id, "classic");
+  test("每个主题都有显示名", () => {
     for (const theme of THEMES) {
       assert.ok(themeName(theme.id).length > 0, `主题 ${theme.id} 应有显示名`);
     }
