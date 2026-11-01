@@ -98,6 +98,45 @@ describe("模型服务 fetchModels", () => {
     assert.deepEqual(result, { models: ["gpt-4", "claude-3"], error: null, errorType: null });
   });
 
+  test("重复的模型 ID 只保留首次出现的一次", async () => {
+    mockFetch(async () =>
+      jsonResponse({ data: [{ id: "gpt-4" }, { id: "claude-3" }, { id: "gpt-4" }] }, { status: 200 }),
+    );
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.deepEqual(result, { models: ["gpt-4", "claude-3"], error: null, errorType: null });
+  });
+
+  test("重定向响应被拒绝且不重试", async () => {
+    let calls = 0;
+    mockFetch(async () => {
+      calls++;
+      return new Response(null, { status: 302, headers: { Location: "/target" } });
+    });
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.equal(calls, 1, "禁止重定向属于确定性错误，不应重试");
+    assert.deepEqual(result, { models: null, error: "模型接口禁止重定向", errorType: "redirect" });
+  });
+
+  test("无 content-length 的超大响应边读边中止", async () => {
+    const chunk = new Uint8Array(600_000);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+    mockFetch(async () => new Response(stream, { status: 200 }));
+
+    const result = await fetchModels(TEST_SITE);
+
+    assert.deepEqual(result, { models: null, error: "模型接口响应过大", errorType: "size" });
+  });
+
   test("网络异常返回通用请求失败错误且不泄露 API Key", async () => {
     mockFetch(async () => {
       throw new Error("connect failed with sk-test-key");
