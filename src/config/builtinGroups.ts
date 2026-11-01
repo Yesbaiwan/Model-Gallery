@@ -63,7 +63,7 @@ export const BUILTIN_GROUP_RULES: readonly GroupRule[] = [
   {
     name: "零一万物",
     icon: "https://registry.npmmirror.com/@lobehub/icons-static-webp/latest/files/light/yi-color.webp",
-    keywords: ["yi"],
+    keywords: ["yi-", "01-ai", "零一万物"],
   },
   {
     name: "LongCat",

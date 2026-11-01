@@ -377,6 +377,10 @@ describe("分组逻辑 - 内置分组", () => {
     ["智谱glm-4", "智谱"],
     ["dots.llm1", "小红书"],
     ["RedNote-v1", "小红书"],
+    ["yi-large", "零一万物"],
+    ["01-ai/Yi-34B-Chat", "零一万物"],
+    ["yiyan", "文心一言"],
+    ["Ling-1T", "百灵"],
     ["unknown-model-xyz", "default"],
   ];
 
@@ -475,6 +479,6 @@ describe("分组逻辑 - 自定义分组", () => {
   test("辅助函数按规范化名称查找", () => {
     const rules = buildGroupRules([{ name: "自定义", keywords: ["custom"], icon: "https://example.com/icon.png" }]);
     assert.equal(getGroupDisplayName("自定义", rules), "自定义");
-    assert.equal(getGroupDisplayName("DEFAULT", rules), "其他");
+    assert.equal(getGroupDisplayName("DEFAULT", rules), "default", "兜底分组名由 UI 层映射为展示文案");
   });
 });

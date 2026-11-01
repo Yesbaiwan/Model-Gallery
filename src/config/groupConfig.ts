@@ -125,21 +125,19 @@ export function buildGroupRules(customRules?: CustomGroupRule[]): GroupRule[] {
 }
 
 export function getGroupDisplayName(groupName: string, rules: readonly GroupRule[] = BUILTIN_GROUP_RULES): string {
-  return keyOf(groupName) === "default"
-    ? "其他"
-    : (rules.find((rule) => keyOf(rule.name) === keyOf(groupName))?.name ?? groupName);
+  return rules.find((rule) => keyOf(rule.name) === keyOf(groupName))?.name ?? groupName;
 }
 
 export function groupModels(models: string[], rules: readonly GroupRule[]): Map<string, string[]> {
   const groups = new Map<string, string[]>();
-  const defaultRule = rules.find((rule) => keyOf(rule.name) === "default");
-  const defaultName = defaultRule?.name ?? "default";
+  const defaultName = rules.find((rule) => keyOf(rule.name) === "default")?.name ?? "default";
+  // 关键词与规则名只在进入模型循环前小写一次，避免每个模型重复做同等数量的字符串分配
+  const matchers = rules
+    .filter((rule) => keyOf(rule.name) !== "default")
+    .map((rule) => ({ name: rule.name, keywords: rule.keywords?.map((keyword) => keyword.toLowerCase()) ?? [] }));
   for (const model of models) {
     const modelLower = model.toLowerCase();
-    const matchingRule = rules.find(
-      (rule) =>
-        keyOf(rule.name) !== "default" && rule.keywords?.some((keyword) => modelLower.includes(keyword.toLowerCase())),
-    );
+    const matchingRule = matchers.find((matcher) => matcher.keywords.some((keyword) => modelLower.includes(keyword)));
     const groupName = matchingRule?.name ?? defaultName;
     const group = groups.get(groupName) ?? [];
     group.push(model);
