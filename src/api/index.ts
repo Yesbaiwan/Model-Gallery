@@ -63,6 +63,8 @@ function getRuntime(): Promise<RuntimeSnapshot> {
 function writeHead(res: http.ServerResponse, statusCode: number): void {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  // 页面会引用第三方图床图标，不向对方泄露本站地址
+  res.setHeader("Referrer-Policy", "no-referrer");
   // 模型列表页面按站点 URL 缓存 60 秒并在后台重新验证；错误页不缓存。
   res.setHeader(
     "Cache-Control",
