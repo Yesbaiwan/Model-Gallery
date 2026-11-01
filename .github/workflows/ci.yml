@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      # package-lock.json 已纳入版本控制，使用 npm ci 保证依赖可复现
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm test
