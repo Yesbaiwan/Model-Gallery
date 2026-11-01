@@ -172,7 +172,7 @@ export function renderGroupSection(
 export function renderError(error: string): string {
   return `
     <div class="state-card error-card" role="alert">
-      <h3 class="state-title">${UI_TEXT.fetchFailedTitle}</h3>
+      <h2 class="state-title">${UI_TEXT.fetchFailedTitle}</h2>
       <p class="state-text">${escapeHtml(error)}</p>
     </div>`;
 }
@@ -180,7 +180,7 @@ export function renderError(error: string): string {
 export function renderEmpty(): string {
   return `
     <div class="state-card empty-card">
-      <h3 class="state-title">${UI_TEXT.emptyTitle}</h3>
+      <h2 class="state-title">${UI_TEXT.emptyTitle}</h2>
       <p class="state-text">${UI_TEXT.emptyHint}</p>
     </div>`;
 }
