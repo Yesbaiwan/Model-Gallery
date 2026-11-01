@@ -22,42 +22,23 @@
   --radius-full: 0px;
   --shadow: none;
   --grid-min-width: 260px;
-  /* 深色模式下的账页格纹底，避免纯黑单调 */
+  /* 账页格纹底：随明暗切换线条颜色，浅色深色同一版面语言 */
   --bg-image:
     repeating-linear-gradient(
       0deg,
       transparent 0,
       transparent 31px,
-      rgba(236, 236, 234, 0.04) 31px,
-      rgba(236, 236, 234, 0.04) 32px
+      light-dark(rgba(22, 22, 22, 0.045), rgba(236, 236, 234, 0.04)) 31px,
+      light-dark(rgba(22, 22, 22, 0.045), rgba(236, 236, 234, 0.04)) 32px
     ),
     repeating-linear-gradient(
       90deg,
       transparent 0,
       transparent 31px,
-      rgba(236, 236, 234, 0.03) 31px,
-      rgba(236, 236, 234, 0.03) 32px
+      light-dark(rgba(22, 22, 22, 0.035), rgba(236, 236, 234, 0.03)) 31px,
+      light-dark(rgba(22, 22, 22, 0.035), rgba(236, 236, 234, 0.03)) 32px
     );
   --bg-size: auto;
-}
-
-/* 浅色模式铺浅色版账页格纹，与深色保持同一版面语言 */
-html[data-theme="light"] {
-  --bg-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent 0,
-      transparent 31px,
-      rgba(22, 22, 22, 0.045) 31px,
-      rgba(22, 22, 22, 0.045) 32px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent 31px,
-      rgba(22, 22, 22, 0.035) 31px,
-      rgba(22, 22, 22, 0.035) 32px
-    );
 }
 
 body {
