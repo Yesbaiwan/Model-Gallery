@@ -30,6 +30,7 @@
 - **关键词**：优先品牌全词或带连字符的写法（`phi-`、`seed-`、`spark-`、`yi-`、`step-`）。泛词（`meta`、`sonar`、`command`、`dots`）真实 ID 必须靠它命中，不收窄；误判交给用户覆盖内置组。
 - **UI**：所有文案进 `src/ui/messages.ts`，动态内容必须转义。交互用原生 `<button>` + `aria-*`，保持 `app.js` 依赖的 `data-action`/`data-role` 契约（`toggle-mode`、`toggle-style-selector`、`toggle-group`）。资产内联顺序为 base → 主题皮肤 → 动效层，不要打乱。
 - **术语**：「主题」= 皮肤层（cookie `style`、DOM `data-style`）；「明暗」= 亮色/暗色（DOM `data-theme`、`light-dark()`）。两者独立，不得混用。
+- **明暗三态**：跟随系统 / 浅色 / 深色循环，存于 localStorage `color-mode`；`auto` 不写 `data-theme`，由 `light-dark()` 跟随系统。按钮图标表示当前状态，状态文案经 `data-label-*` 由 `app.js` 同步（服务端无法读取 localStorage）。
 - **测试**：全部 mock `globalThis.fetch`，不得新增真实网络请求。
 
 ## 部署
@@ -41,4 +42,3 @@
 - 模型数量上限：真实使用遇不到，硬加会引入截断语义。
 - 页面标题带站点名：产品决策，未定。
 - 为退役/小众模型（`babbage`、`davinci`、`abab`、Amazon、AI21 等）加内置关键词：交给用户自定义组。
-- 明暗“跟随系统”与 `theme` cookie 改名：低概率/产品取舍。

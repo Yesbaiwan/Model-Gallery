@@ -6,9 +6,9 @@ import { UI_TEXT } from "./messages.ts";
 
 export interface ThemeDefinition {
   id: ThemeId;
-  /** src/assets/ 下相对路径的主题文件（皮肤 + 动效一体，每主题单文件） */
+  /** src/assets/ 下相对路径的主题皮肤文件 */
   cssFile: string;
-  /** 可选的共享动效文件；主题自带动效时留空 */
+  /** 可选的共享动效文件（archive/handdrawn 共用）；主题自带动效时留空 */
   motionFile?: string;
   /** Google Fonts 样式表地址；空字符串表示使用系统字体栈，不注入字体链接 */
   fontHref: string;
