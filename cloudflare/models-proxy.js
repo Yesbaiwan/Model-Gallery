@@ -12,10 +12,13 @@ export default {
     if (url.pathname !== "/v1/models" || request.method !== "GET") {
       return new Response("Not Found", { status: 404 });
     }
-    // 以真实域名请求上游，鉴权头原样透传
+    // 只透传鉴权与期望的响应类型，避免把 cf-* 等边缘头带给上游
     return fetch(new URL(url.pathname + url.search, UPSTREAM), {
       method: request.method,
-      headers: request.headers,
+      headers: {
+        Authorization: request.headers.get("Authorization") ?? "",
+        Accept: "application/json",
+      },
       redirect: "manual",
     });
   },
