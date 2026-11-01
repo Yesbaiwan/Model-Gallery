@@ -1,10 +1,15 @@
 // 集中管理的 UI 文案，避免散落硬编码；修改文案只需改这一处。
 // 术语约定：「主题」指皮肤层（经典/档案/手绘，配置 themes 数组、DOM data-style）；
-// 「明暗」指亮色/暗色模式（DOM data-theme 属性，CSS light-dark() 依赖它）。
+// 「明暗」指亮色/暗色模式（DOM data-theme 属性，CSS light-dark() 依赖它），三态为跟随系统/浅色/深色。
 
 export const UI_TEXT = {
   pageTitle: "Model Gallery",
   colorModeToggleLabel: "切换明暗",
+  colorModeLabels: {
+    auto: "明暗跟随系统（点击切换）",
+    light: "浅色模式（点击切换）",
+    dark: "深色模式（点击切换）",
+  },
   styleSelectorLabel: "切换主题",
   styleNames: {
     classic: "经典",

@@ -235,31 +235,17 @@ body {
   right: 1.5rem;
 }
 
-/* 明暗图标：默认深色显示太阳，浅色显示月亮（图标表示点击后的目标明暗模式） */
-.mode-toggle .icon-sun {
-  display: none;
-}
-
+/* 明暗图标表示当前状态：无 data-theme 时跟随系统（半实心圆），浅色显示太阳，深色显示月亮 */
+.mode-toggle .icon-auto,
+.mode-toggle .icon-sun,
 .mode-toggle .icon-moon {
-  display: block;
-}
-
-:root[data-theme="dark"] .mode-toggle .icon-sun {
-  display: block;
-}
-
-:root[data-theme="dark"] .mode-toggle .icon-moon {
   display: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .mode-toggle .icon-sun {
-    display: block;
-  }
-
-  :root:not([data-theme]) .mode-toggle .icon-moon {
-    display: none;
-  }
+:root:not([data-theme]) .mode-toggle .icon-auto,
+:root[data-theme="light"] .mode-toggle .icon-sun,
+:root[data-theme="dark"] .mode-toggle .icon-moon {
+  display: block;
 }
 
 /* ---------- 选择器（站点 / 主题共用下拉骨架） ---------- */

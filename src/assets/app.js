@@ -2,8 +2,10 @@
   "use strict";
 
   // 明暗模式 localStorage 键，与 assets.ts 中 COLOR_MODE_INIT_SCRIPT 共用，修改需两处同步。
-  const COLOR_MODE_KEY = "theme";
-  const TOAST_DURATION_MS = 2200;
+  // 存 "auto" / "light" / "dark"；"auto" 表示跟随系统，此时不设置 data-theme 属性。
+  const COLOR_MODE_KEY = "color-mode";
+  const COLOR_MODE_LABEL_KEYS = { auto: "labelAuto", light: "labelLight", dark: "labelDark" };
+  const TOAST_DURATION_MS = 2000;
   const COPY_FEEDBACK_MS = 350;
 
   const storage = (() => {
@@ -13,6 +15,13 @@
       return null;
     }
   })();
+  const safeGet = (key) => {
+    try {
+      return storage?.getItem(key) ?? null;
+    } catch {
+      return null;
+    }
+  };
   const safeSet = (key, value) => {
     try {
       storage?.setItem(key, value);
@@ -22,25 +31,41 @@
   };
 
   const root = document.documentElement;
-  const systemDark = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const currentColorMode = () => root.getAttribute("data-theme") || (systemDark() ? "dark" : "light");
+  const readColorMode = () => {
+    const stored = safeGet(COLOR_MODE_KEY);
+    return stored === "light" || stored === "dark" ? stored : "auto";
+  };
+  // 三态循环：跟随系统 → 浅色 → 深色 → 跟随系统
+  const nextColorMode = (mode) => (mode === "auto" ? "light" : mode === "light" ? "dark" : "auto");
 
-  const applyColorMode = (mode) => {
-    root.setAttribute("data-theme", mode);
-    safeSet(COLOR_MODE_KEY, mode);
+  const updateColorModeLabel = (mode) => {
+    const button = document.getElementById("colorModeToggleBtn");
+    if (!button) return;
+    const label = button.dataset[COLOR_MODE_LABEL_KEYS[mode]];
+    if (!label) return;
+    button.setAttribute("aria-label", label);
+    button.title = label;
   };
 
-  // 明暗切换过渡由主题注册表下发（data-theme-transition="false" 表示立即生效）
-  const useColorModeTransition = () => root.getAttribute("data-theme-transition") !== "false";
+  const applyColorMode = (mode) => {
+    // 跟随系统时不写 data-theme，交给 CSS 的 light-dark() 与 prefers-color-scheme 自动生效
+    if (mode === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", mode);
+    safeSet(COLOR_MODE_KEY, mode);
+    updateColorModeLabel(mode);
+  };
 
-  // 明暗切换：支持 View Transitions 的浏览器走全页交叉淡入，其余立即生效
+  // 明暗切换：主题注册表声明 data-theme-transition="false"（classic）或不支持 View Transitions 时立即生效
   const setColorMode = (mode) => {
-    if (!useColorModeTransition() || typeof document.startViewTransition !== "function") {
+    if (root.getAttribute("data-theme-transition") === "false" || typeof document.startViewTransition !== "function") {
       applyColorMode(mode);
       return;
     }
     document.startViewTransition(() => applyColorMode(mode));
   };
+
+  // 服务端不知道 localStorage，首屏由脚本把按钮文案对齐到已保存的明暗状态
+  updateColorModeLabel(readColorMode());
 
   let siteSelectorOpen = false;
   let styleSelectorOpen = false;
@@ -187,7 +212,7 @@
   document.addEventListener("click", (event) => {
     const target = event.target?.closest?.("[data-action]") || event.target;
     if (target?.dataset) {
-      if (target.dataset.action === "toggle-mode") setColorMode(currentColorMode() === "dark" ? "light" : "dark");
+      if (target.dataset.action === "toggle-mode") setColorMode(nextColorMode(readColorMode()));
       if (target.dataset.action === "toggle-site-selector") toggleSiteSelector();
       if (target.dataset.action === "toggle-style-selector") toggleStyleSelector();
       if (target.dataset.action === "copy-model") copyModel(target.dataset.model || "", target);

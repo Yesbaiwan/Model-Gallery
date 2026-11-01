@@ -10,67 +10,43 @@
   --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ---------- 明暗切换：日/月图标交叉旋转 ----------
-   base.css 对图标有高特异性 display 规则（含暗色与系统偏好变体），
-   这里必须以相同特异性全量重声明为 flex 居中 + opacity 切换，否则被覆盖回错位排版。
+/* ---------- 明暗切换：三态图标交叉旋转 ----------
+   base.css 按当前状态控制 display，这里改为绝对定位叠放 + 透明度过渡；
+   状态规则带 :root 前缀，与 base 的高特异性规则同分且写在后面，避免 display 被覆盖回错位排版。
    全页色彩过渡由 app.js 的 View Transitions 交叉淡入承担，此处只管图标本身。 */
 
-.mode-toggle .icon-sun,
-.mode-toggle .icon-moon,
-:root[data-theme="dark"] .mode-toggle .icon-sun,
-:root[data-theme="dark"] .mode-toggle .icon-moon {
+:root .mode-toggle .icon-auto,
+:root .mode-toggle .icon-sun,
+:root .mode-toggle .icon-moon {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
   transition:
     opacity 0.15s ease,
     transform 0.4s var(--ease-snap);
 }
 
-.mode-toggle .icon-sun {
-  opacity: 0;
+:root .mode-toggle .icon-auto {
+  transform: scale(0.4);
+}
+
+:root .mode-toggle .icon-sun {
   transform: rotate(120deg) scale(0.4);
 }
 
-.mode-toggle .icon-moon {
-  opacity: 1;
-  transform: none;
-}
-
-:root[data-theme="dark"] .mode-toggle .icon-sun {
-  opacity: 1;
-  transform: none;
-}
-
-:root[data-theme="dark"] .mode-toggle .icon-moon {
-  opacity: 0;
+:root .mode-toggle .icon-moon {
   transform: rotate(-120deg) scale(0.4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .mode-toggle .icon-sun,
-  :root:not([data-theme]) .mode-toggle .icon-moon {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-      opacity 0.15s ease,
-      transform 0.4s var(--ease-snap);
-  }
-
-  :root:not([data-theme]) .mode-toggle .icon-sun {
-    opacity: 1;
-    transform: none;
-  }
-
-  :root:not([data-theme]) .mode-toggle .icon-moon {
-    opacity: 0;
-    transform: rotate(-120deg) scale(0.4);
-  }
+:root:not([data-theme]) .mode-toggle .icon-auto,
+:root[data-theme="light"] .mode-toggle .icon-sun,
+:root[data-theme="dark"] .mode-toggle .icon-moon {
+  display: flex;
+  opacity: 1;
+  transform: none;
 }
 
 /* ---------- 入场编排：拍上墙 ----------

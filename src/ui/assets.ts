@@ -37,12 +37,13 @@ export function jsScripts(): string {
 }
 
 /** <head> 内联的明暗模式初始化脚本：首屏渲染前恢复已保存的亮暗选择，避免暗色用户闪烁。
- *  localStorage 键 "theme" 与 app.js 的 THEME_KEY 保持一致（历史命名，存的是明暗值 light/dark）。 */
+ *  localStorage 键 "color-mode" 与 app.js 的 COLOR_MODE_KEY 保持一致。
+ *  只恢复 light/dark；缺失、auto 或非法值时保持无 data-theme，由 light-dark() 跟随系统。 */
 export const COLOR_MODE_INIT_SCRIPT = `
   (() => {
     try {
-      const theme = localStorage.getItem("theme");
-      if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+      const mode = localStorage.getItem("color-mode");
+      if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
     } catch { /* storage 不可用 */ }
   })();
 `;

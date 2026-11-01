@@ -2,6 +2,7 @@ import type { AppConfig, GroupRule, SiteConfig } from "../types.ts";
 import { getGroupDisplayName } from "../config/groupConfig.ts";
 import { escapeAttribute, escapeHtml, sanitizeUrl } from "./escape.ts";
 import {
+  ICON_AUTO,
   ICON_CHEVRON,
   ICON_CHECK,
   ICON_COPY,
@@ -19,10 +20,14 @@ const ANIMATED_CARD_LIMIT = 8;
 /** 参与分组级联延迟的组序号上限，分组再多也不会让末尾分组迟迟不出场。 */
 const ANIMATED_GROUP_LIMIT = 6;
 
+/** 明暗按钮：跟随系统 → 浅色 → 深色循环，图标表示当前状态；状态文案由 app.js 按 localStorage 更新。 */
 export function renderColorModeToggle(): string {
+  const labels = UI_TEXT.colorModeLabels;
   return `
-    <button id="themeToggleBtn" type="button" data-action="toggle-mode"
-      class="icon-btn mode-toggle" aria-label="${UI_TEXT.colorModeToggleLabel}" title="${UI_TEXT.colorModeToggleLabel}">
+    <button id="colorModeToggleBtn" type="button" data-action="toggle-mode"
+      class="icon-btn mode-toggle" aria-label="${UI_TEXT.colorModeToggleLabel}" title="${UI_TEXT.colorModeToggleLabel}"
+      data-label-auto="${labels.auto}" data-label-light="${labels.light}" data-label-dark="${labels.dark}">
+      <span class="icon-auto">${ICON_AUTO}</span>
       <span class="icon-sun">${ICON_SUN}</span>
       <span class="icon-moon">${ICON_MOON}</span>
     </button>`;
