@@ -1,6 +1,6 @@
 import { test, describe, afterEach, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { fetchModels } from "../services/models.ts";
+import { fetchModels, joinApiUrl } from "../services/models.ts";
 import type { SiteConfig } from "../types.ts";
 
 const ORIGINAL_FETCH = globalThis.fetch;
@@ -33,6 +33,16 @@ describe("模型服务 fetchModels", () => {
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
+  });
+
+  test("apiUrl 的子路径被保留，端点两端斜线数量不影响结果", () => {
+    assert.equal(joinApiUrl("https://api.example.com", "/v1/models"), "https://api.example.com/v1/models");
+    assert.equal(
+      joinApiUrl("https://api.example.com/openai/v1/", "/models"),
+      "https://api.example.com/openai/v1/models",
+    );
+    assert.equal(joinApiUrl("https://api.example.com/openai/", "models"), "https://api.example.com/openai/models");
+    assert.equal(joinApiUrl("https://api.example.com/openai", "//models"), "https://api.example.com/openai/models");
   });
 
   test("成功响应返回模型 ID，并使用站点 URL、Endpoint 和鉴权头", async () => {

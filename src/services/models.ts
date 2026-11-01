@@ -37,7 +37,7 @@ export async function fetchModels(
 async function fetchModelsOnce(site: SiteConfig, timeoutMs: number): Promise<FetchModelsResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const url = new URL(site.apiEndpoint, site.apiUrl.endsWith("/") ? site.apiUrl : `${site.apiUrl}/`).toString();
+  const url = joinApiUrl(site.apiUrl, site.apiEndpoint);
 
   try {
     // 手动模式：不跟随重定向，3xx 由本函数判定为错误，避免依赖运行时错误文案。
@@ -83,6 +83,11 @@ async function fetchModelsOnce(site: SiteConfig, timeoutMs: number): Promise<Fet
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/** apiEndpoint 追加在 apiUrl 之后：两端多余斜线不会产生空段，apiUrl 的子路径得以保留。 */
+export function joinApiUrl(apiUrl: string, apiEndpoint: string): string {
+  return `${apiUrl.replace(/\/+$/, "")}/${apiEndpoint.replace(/^\/+/, "")}`;
 }
 
 /** 边读边累计字节数，超过上限立即取消流并返回 null，避免把超大响应整段读进内存。 */

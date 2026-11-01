@@ -36,4 +36,6 @@ export const ERROR_PAGE_TEXT = {
   siteNotFoundMessage: "请求的站点不存在",
   serverErrorTitle: "服务器错误",
   serverErrorMessage: "服务器暂时无法处理请求",
+  configErrorTitle: "配置无法加载",
+  configErrorHint: "请检查 CONFIG_JSON 环境变量或 config.json，修正后重启服务",
 } as const;

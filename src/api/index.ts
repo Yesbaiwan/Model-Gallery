@@ -1,4 +1,5 @@
 import http from "node:http";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { loadAppConfig } from "../config/appConfig.ts";
@@ -10,10 +11,8 @@ import { renderErrorPage } from "../ui/errorPage.ts";
 import { ERROR_PAGE_TEXT } from "../ui/messages.ts";
 import { resolveEnabledThemes, type ThemeDefinition, type ThemeId } from "../ui/themes.ts";
 
-/** 模型列表页面在边缘缓存的秒数与后台重新验证窗口。 */
-const EDGE_CACHE_TTL_SECONDS = 60;
-const EDGE_CACHE_STALE_WHILE_REVALIDATE_SECONDS = 300;
-const FAVICON_CACHE_MAX_AGE_SECONDS = 86_400;
+/** 浏览器缓存 1 小时：换图标最多 1 小时后生效；到期后靠 ETag 协商，未变时只回 304。 */
+const FAVICON_CACHE_MAX_AGE_SECONDS = 3_600;
 /** 主题选择 cookie：一年有效期，仅随本站请求发送。 */
 const STYLE_COOKIE_MAX_AGE_SECONDS = 31_536_000;
 
@@ -47,14 +46,27 @@ interface RuntimeSnapshot {
 
 let runtimePromise: Promise<RuntimeSnapshot> | null = null;
 const faviconPath = fileURLToPath(new URL("../assets/favicon.svg", import.meta.url));
+let faviconPromise: Promise<{ body: Buffer; etag: string }> | null = null;
+
+/** 配置校验失败：错误信息只含站点名/分组名/order，不含 apiKey，可以直接展示在错误页。 */
+class ConfigError extends Error {}
+
+/** favicon 只读一次盘，并用内容哈希作为 ETag，改图标后可通过协商缓存立即生效。 */
+function getFavicon(): Promise<{ body: Buffer; etag: string }> {
+  faviconPromise ??= readFile(faviconPath).then((body) => ({
+    body,
+    etag: `"${createHash("sha256").update(body).digest("hex").slice(0, 16)}"`,
+  }));
+  return faviconPromise;
+}
 
 function getRuntime(): Promise<RuntimeSnapshot> {
   if (!runtimePromise) {
     runtimePromise = loadAppConfig()
       .then((config) => ({ config, rules: buildGroupRules(config.customGroupRules) }))
-      .catch((error) => {
+      .catch((error: unknown) => {
         runtimePromise = null;
-        throw error;
+        throw new ConfigError(error instanceof Error ? error.message : ERROR_PAGE_TEXT.configErrorTitle);
       });
   }
   return runtimePromise;
@@ -63,17 +75,12 @@ function getRuntime(): Promise<RuntimeSnapshot> {
 function writeHead(res: http.ServerResponse, statusCode: number): void {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  // 页面无需被任何站点嵌套，禁止 iframe 套壳点击劫持
+  res.setHeader("X-Frame-Options", "DENY");
   // 页面会引用第三方图床图标，不向对方泄露本站地址
   res.setHeader("Referrer-Policy", "no-referrer");
-  // 模型列表页面按站点 URL 缓存 60 秒并在后台重新验证；错误页不缓存。
-  res.setHeader(
-    "Cache-Control",
-    statusCode >= 400
-      ? "no-store"
-      : `public, s-maxage=${EDGE_CACHE_TTL_SECONDS}, stale-while-revalidate=${EDGE_CACHE_STALE_WHILE_REVALIDATE_SECONDS}`,
-  );
-  // 页面外观依赖 style cookie，边缘缓存必须按 Cookie 分片，避免串皮
-  if (statusCode < 400) res.setHeader("Vary", "Cookie");
+  // 页面外观依赖 style cookie，无法在共享缓存中安全复用，因此统一不缓存。
+  res.setHeader("Cache-Control", "no-store");
   res.statusCode = statusCode;
 }
 
@@ -86,14 +93,20 @@ function writeError(res: http.ServerResponse, statusCode: number, title: string,
   writeHtml(res, statusCode, renderErrorPage(title, message));
 }
 
-async function serveFavicon(res: http.ServerResponse, headOnly: boolean): Promise<void> {
-  const file = await readFile(faviconPath);
+async function serveFavicon(req: http.IncomingMessage, res: http.ServerResponse, headOnly: boolean): Promise<void> {
+  const { body, etag } = await getFavicon();
   res.setHeader("Content-Type", "image/svg+xml");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("ETag", etag);
   res.setHeader("Cache-Control", `public, max-age=${FAVICON_CACHE_MAX_AGE_SECONDS}`);
+  if (req.headers["if-none-match"] === etag) {
+    res.statusCode = 304;
+    res.end();
+    return;
+  }
   res.statusCode = 200;
   if (headOnly) res.end();
-  else res.end(file);
+  else res.end(body);
 }
 
 async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -108,7 +121,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     const headOnly = req.method === "HEAD";
 
     if (url.pathname === "/favicon.svg") {
-      await serveFavicon(res, headOnly);
+      await serveFavicon(req, res, headOnly);
       return;
     }
     if (url.pathname !== "/") {
@@ -117,8 +130,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 
     const runtime = await getRuntime();
-    const requestedSite = url.searchParams.get("site");
-    const siteName = requestedSite ?? runtime.config.defaultSite;
+    // 空值或纯空白视为未指定，回落到默认站点
+    const requestedSite = url.searchParams.get("site")?.trim();
+    const siteName = requestedSite || runtime.config.defaultSite;
     const site = runtime.config.sites.find((candidate) => candidate.name.toLowerCase() === siteName.toLowerCase());
     if (!site) {
       writeError(res, 404, ERROR_PAGE_TEXT.siteNotFoundTitle, ERROR_PAGE_TEXT.siteNotFoundMessage);
@@ -145,7 +159,13 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
   } catch (error) {
     console.error("请求处理失败:", error);
-    if (!res.writableEnded) writeError(res, 500, ERROR_PAGE_TEXT.serverErrorTitle, ERROR_PAGE_TEXT.serverErrorMessage);
+    if (res.writableEnded) return;
+    if (error instanceof ConfigError) {
+      // 配置错误是启动期问题，直接把具体原因展示到页面，避免用户只能看终端
+      writeError(res, 500, ERROR_PAGE_TEXT.configErrorTitle, `${error.message}。${ERROR_PAGE_TEXT.configErrorHint}`);
+      return;
+    }
+    writeError(res, 500, ERROR_PAGE_TEXT.serverErrorTitle, ERROR_PAGE_TEXT.serverErrorMessage);
   }
 }
 
@@ -157,4 +177,6 @@ if (!process.env.VERCEL && !process.env.TEST_SERVER) {
     console.log(`\n  ▲ Model Gallery 开发服务器已启动`);
     console.log(`  ➜  本地访问: http://localhost:${port}\n`);
   });
+  // 提前加载配置：有错误立刻打到终端，而不是等第一次请求
+  void getRuntime().catch((error: Error) => console.error("配置加载失败:", error.message));
 }

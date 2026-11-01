@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { getTheme, type ThemeId } from "./themes.ts";
 
 // 零构建：CSS/JS 以真实文件存放在 src/assets/，内联进 HTML。
-// 与 favicon 的读取方式一致，Vercel 侧由 vercel.json 的 includeFiles: "src/**" 保证文件随函数打包。
+// 与 favicon 的读取方式一致，Vercel 侧由 vercel.json 的 includeFiles: "src/assets/**" 保证文件随函数打包。
 
 /** 开发模式：本地直跑（非 Vercel、非测试服务器），资产每次读取以支持改文件后直接刷新。 */
 const IS_DEV = !process.env.VERCEL && !process.env.TEST_SERVER;

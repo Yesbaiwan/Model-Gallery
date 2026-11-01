@@ -34,12 +34,14 @@ describe("集成测试：启动服务器后检测", () => {
   let server: Server;
   let baseUrl: string;
   let handleRequest: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
+  let upstreamCalls = 0;
 
   before(async () => {
     process.env.TEST_SERVER = "1";
     process.env.CONFIG_JSON = JSON.stringify(TEST_CONFIG);
 
     globalThis.fetch = async (input, init) => {
+      upstreamCalls += 1;
       const requestUrl = String(input);
       const headers = init?.headers as Record<string, string>;
       const siteB = requestUrl.startsWith("https://api.b.example.com");
@@ -78,17 +80,20 @@ describe("集成测试：启动服务器后检测", () => {
   async function fetchText(
     path: string,
     headers: Record<string, string> = {},
+    method = "GET",
   ): Promise<{
     status: number;
     text: string;
     contentType: string | null;
     cacheControl: string | null;
     vary: string | null;
+    etag: string | null;
     referrerPolicy: string | null;
+    xFrameOptions: string | null;
     setCookie: string[];
   }> {
     return new Promise((resolve, reject) => {
-      const req = http.get(`${baseUrl}${path}`, { headers }, (res) => {
+      const req = http.request(`${baseUrl}${path}`, { headers, method }, (res) => {
         let data = "";
         res.setEncoding("utf-8");
         res.on("data", (chunk) => {
@@ -101,12 +106,15 @@ describe("集成测试：启动服务器后检测", () => {
             contentType: res.headers["content-type"] || null,
             cacheControl: res.headers["cache-control"] || null,
             vary: res.headers.vary || null,
+            etag: res.headers.etag || null,
             referrerPolicy: res.headers["referrer-policy"]?.toString() ?? null,
+            xFrameOptions: res.headers["x-frame-options"]?.toString() ?? null,
             setCookie: res.headers["set-cookie"] ?? [],
           });
         });
       });
       req.on("error", reject);
+      req.end();
     });
   }
 
@@ -121,22 +129,56 @@ describe("集成测试：启动服务器后检测", () => {
     assert.ok(!text.includes("sk-test-key-b"));
   });
 
-  test("主页带边缘缓存头，错误页不缓存", async () => {
+  test("页面统一不缓存，避免 Cookie 分片导致的串皮", async () => {
     const home = await fetchText("/");
-    assert.ok(home.cacheControl?.includes("s-maxage=60"), "主页应设置边缘缓存 TTL");
-    assert.ok(home.cacheControl?.includes("stale-while-revalidate"), "主页应允许后台重新验证");
+    assert.equal(home.cacheControl, "no-store");
+    assert.equal(home.vary, null, "不应再下发 Vary: Cookie");
+    assert.equal(home.xFrameOptions, "DENY", "页面不应允许被 iframe 嵌套");
 
     const notFound = await fetchText("/unknown-path");
     assert.equal(notFound.status, 404);
     assert.equal(notFound.cacheControl, "no-store", "错误页不应被缓存");
   });
 
-  test("favicon 返回 200 且内容类型为 SVG", async () => {
-    const { status, text, contentType } = await fetchText("/favicon.svg");
+  test("空 site 参数回落到默认站点", async () => {
+    const empty = await fetchText("/?site=");
+    assert.equal(empty.status, 200);
+    assert.ok(empty.text.includes("gpt-4"), "应渲染默认站点的模型");
+  });
 
-    assert.equal(status, 200);
-    assert.ok(contentType?.includes("image/svg+xml"));
-    assert.ok(text.includes("<svg"));
+  test("刷新链接指向当前站点", async () => {
+    const home = await fetchText("/");
+    const encoded = encodeURIComponent("测试站点A");
+    assert.ok(home.text.includes(`href="/?site=${encoded}"`), "刷新链接应保留当前站点");
+
+    const before = upstreamCalls;
+    const refreshed = await fetchText(`/?site=${encoded}`);
+    assert.equal(refreshed.status, 200);
+    assert.ok(upstreamCalls > before, "页面不缓存，重新请求会再次访问上游");
+  });
+
+  test("favicon 返回 200、内容类型为 SVG，并支持 ETag 协商缓存", async () => {
+    const first = await fetchText("/favicon.svg");
+
+    assert.equal(first.status, 200);
+    assert.ok(first.contentType?.includes("image/svg+xml"));
+    assert.ok(first.text.includes("<svg"));
+    assert.ok(first.etag, "应下发 ETag");
+
+    const revalidated = await fetchText("/favicon.svg", { "If-None-Match": first.etag! });
+    assert.equal(revalidated.status, 304);
+  });
+
+  test("HEAD 请求返回同样的头部且不带响应体", async () => {
+    const page = await fetchText("/", {}, "HEAD");
+    assert.equal(page.status, 200);
+    assert.equal(page.text, "");
+    assert.equal(page.cacheControl, "no-store");
+
+    const favicon = await fetchText("/favicon.svg", {}, "HEAD");
+    assert.equal(favicon.status, 200);
+    assert.equal(favicon.text, "");
+    assert.ok(favicon.etag, "HEAD 也应带 ETag");
   });
 
   test("站点切换返回 200 并显示目标站点", async () => {
@@ -154,10 +196,7 @@ describe("集成测试：启动服务器后检测", () => {
     assert.ok(text.includes("页面不存在"));
   });
 
-  test("URL theme 参数切换主题并下发 Set-Cookie，主页带 Vary: Cookie", async () => {
-    const home = await fetchText("/");
-    assert.equal(home.vary, "Cookie", "主页应带 Vary: Cookie");
-
+  test("URL theme 参数切换主题并下发 Set-Cookie", async () => {
     const themed = await fetchText("/?theme=classic");
     assert.equal(themed.status, 200);
     assert.ok(themed.text.includes('data-style="classic"'), "应渲染 classic 主题");
