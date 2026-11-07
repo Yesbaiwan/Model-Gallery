@@ -89,7 +89,6 @@ describe("集成测试：启动服务器后检测", () => {
     vary: string | null;
     etag: string | null;
     referrerPolicy: string | null;
-    xFrameOptions: string | null;
     setCookie: string[];
   }> {
     return new Promise((resolve, reject) => {
@@ -108,7 +107,6 @@ describe("集成测试：启动服务器后检测", () => {
             vary: res.headers.vary || null,
             etag: res.headers.etag || null,
             referrerPolicy: res.headers["referrer-policy"]?.toString() ?? null,
-            xFrameOptions: res.headers["x-frame-options"]?.toString() ?? null,
             setCookie: res.headers["set-cookie"] ?? [],
           });
         });
@@ -133,7 +131,6 @@ describe("集成测试：启动服务器后检测", () => {
     const home = await fetchText("/");
     assert.equal(home.cacheControl, "no-store");
     assert.equal(home.vary, null, "不应再下发 Vary: Cookie");
-    assert.equal(home.xFrameOptions, "DENY", "页面不应允许被 iframe 嵌套");
 
     const notFound = await fetchText("/unknown-path");
     assert.equal(notFound.status, 404);

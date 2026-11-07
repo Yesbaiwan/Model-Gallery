@@ -75,8 +75,7 @@ function getRuntime(): Promise<RuntimeSnapshot> {
 function writeHead(res: http.ServerResponse, statusCode: number): void {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
-  // 页面无需被任何站点嵌套，禁止 iframe 套壳点击劫持
-  res.setHeader("X-Frame-Options", "DENY");
+  // 页面不禁止 iframe 嵌套：NewAPI 等站点会把本页作为「首页内容」嵌入其主页
   // 页面会引用第三方图床图标，不向对方泄露本站地址
   res.setHeader("Referrer-Policy", "no-referrer");
   // 页面外观依赖 style cookie，无法在共享缓存中安全复用，因此统一不缓存。

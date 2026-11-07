@@ -13,7 +13,7 @@ export default {
     if (request.method !== "GET") {
       return new Response("Not Found", { status: 404 });
     }
-    // 只透传鉴权与期望的响应类型，避免把 cf-* 等边缘头带给上游
+    // 只透传鉴权与期望的响应类型，过滤客户端自带的其余请求头；
     return fetch(new URL(url.pathname + url.search, UPSTREAM), {
       method: request.method,
       headers: {
